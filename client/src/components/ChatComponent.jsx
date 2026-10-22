@@ -11,6 +11,7 @@ import {
 } from 'stream-chat-react';
 import 'stream-chat-react/dist/css/v2/index.css';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config';
 
 // Create a shared StreamChat instance
 const STREAM_API_KEY = 'pnn5rnnuzvzq';
@@ -148,7 +149,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
             }
 
             // Get token from backend
-            const tokenResponse = await fetch('https://theervu-kaanal.onrender.com/api/chat/token', {
+            const tokenResponse = await fetch(`${API_BASE}/api/chat/token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

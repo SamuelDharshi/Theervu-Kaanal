@@ -6,6 +6,7 @@ import Footer from '../shared/Footer';
 import { Container, Row, Col, Form, Table, Badge, Spinner, Modal, Button } from 'react-bootstrap';
 import { toast } from 'react-hot-toast';
 import { Eye } from 'lucide-react';
+import { API_BASE } from '../config';
 
 const ResourceManagement = () => {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ const ResourceManagement = () => {
                 throw new Error('No authentication token found');
             }
 
-            const response = await fetch('http://localhost:5000/api/admin/resource-management', {
+            const response = await fetch(`${API_BASE}/api/admin/resource-management`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -80,7 +81,7 @@ const ResourceManagement = () => {
             }
 
             // Fetch detailed grievance information
-            const response = await fetch(`http://localhost:5000/api/grievances/department/${resource.department}/details/${resource.petitionId}`, {
+            const response = await fetch(`${API_BASE}/api/grievances/department/${resource.department}/details/${resource.petitionId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

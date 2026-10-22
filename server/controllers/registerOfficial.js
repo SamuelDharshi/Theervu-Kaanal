@@ -4,7 +4,7 @@ import Official from '../models/Official.js';
 // Import the redirect helper if you have it
 // import { getOfficialDashboard } from '../utils/redirectHelper.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { JWT_SECRET } from '../config/jwt.js';
 
 const generateToken = (user) => {
     const payload = {

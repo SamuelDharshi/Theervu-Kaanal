@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import '../styles/Timeline.css';
+import { API_BASE } from '../config';
 
 const TimelineView = ({ grievanceId, onBack }) => {
     const [timelineStages, setTimelineStages] = useState([]);
@@ -16,7 +17,7 @@ const TimelineView = ({ grievanceId, onBack }) => {
             const token = localStorage.getItem('token');
             const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-            const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/timeline-stages`, {
+            const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/timeline-stages`, {
                 headers: headers
             });
 

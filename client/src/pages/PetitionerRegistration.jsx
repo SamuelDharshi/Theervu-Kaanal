@@ -3,6 +3,7 @@ import { useNavigate, Link, Link as RouterLink } from 'react-router-dom';
 import Footer from '../shared/Footer';
 import NavBar from '../components/NavBar';
 import { User, ArrowLeft } from 'lucide-react';
+import { API_BASE } from '../config';
 
 const PetitionerRegistration = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ const PetitionerRegistration = () => {
 
     if (validateForm()) {
       try {
-        const response = await fetch("https://theervu-kaanal.onrender.com/api/petitioner/register", {
+        const response = await fetch(`${API_BASE}/api/petitioner/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),

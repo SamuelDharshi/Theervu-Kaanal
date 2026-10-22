@@ -1,40 +1,112 @@
-# Theervu-Kaanal (Grievance Redressal System)
+# Theervu-Kaanal: Grievance Redressal System
 
-A comprehensive Grievance Redressal System with AI-powered Smart Query Assistant, real-time chat functionality, and automated case management.
+**Theervu-Kaanal** ("see the solution") is a citizen grievance portal for Tamil Nadu government departments (Water, Electricity, RTO). Every complaint is routed to the right local official, tracked through a public timeline, and escalated automatically if it stalls. Admins can ask an AI assistant about the data in plain English.
 
-## Features
+---
 
-- 🤖 **Smart Query Chatbot** - AI-powered assistant using Google Gemini for grievance support
-- � **Supabase Authentication** - Secure authentication with Supabase Auth
-- �📊 **Admin Dashboard** - Complete oversight and analytics for grievance management
-- 💬 **Real-time Chat** - Instant communication between petitioners and officials
-- 📁 **Document Management** - Upload and track grievance-related documents
-- 🔔 **Notification System** - Real-time updates on grievance status
-- 🗺️ **Location-based Tracking** - Track grievances by department and location
-- ⚡ **Escalation Management** - Automated escalation for pending cases
-- 🔄 **Repetitive Case Detection** - Identifies and flags recurring issues
+## The problem
 
-## Tech Stack
+- **Complaints go to the wrong desk.** Citizens don't know which office or official handles their street, so petitions bounce between departments.
+- **No visibility.** After filing, the citizen has no idea whether anyone has read the complaint.
+- **No accountability.** Grievances sit for weeks. Nothing escalates an overdue case, and recurring problems in the same area are never connected.
+- **Officers lack planning data.** Funds and manpower needs are scattered, so heads of department can't see where resources are needed.
+- **Administrators can't query the system.** Every "how many pending water cases in Adyar?" question needs a manual report.
 
-### Frontend
-- React 18
-- Material-UI (MUI)
-- React Router
-- Axios
-- Stream Chat React
-- Recharts (for analytics)
-- React Hot Toast
+## What Theervu-Kaanal solves
 
-### Backend
-- Node.js & Express
-- MongoDB & Mongoose
-- **Supabase** (Authentication)
-- Socket.io (real-time communication)
-- JWT Authentication (legacy support)
-- Google Generative AI (Gemini)
-- Xenova Transformers
-- Multer (file uploads)
-- Node-cron (scheduled tasks)
+| Problem | Feature |
+|---|---|
+| Routing | Each grievance is **auto-assigned by department + taluk** to the jurisdiction's official, with AI priority analysis (Gemini, keyword fallback) |
+| Visibility | **Track by petition ID** from the home page, with a stage-by-stage timeline (Filed → Under Review → Investigation → Resolution) and notifications |
+| Accountability | Official actions (accept or decline, start progress, plan a timeline, reassign, resolve with proof document) are each logged. **Petitioner escalation** goes to the admin, and a **daily cron** flags overdue cases. Petitioner feedback and ratings are recorded |
+| Recurring issues | **Repetitive-case detection** finds similar complaints in the same area |
+| Planning | **Resource management** per case (funds, manpower, materials, dates), rolled up on the admin dashboard |
+| Admin analytics | **Smart Query assistant**: "How many pending cases in Water?" or "What resources are needed in Egmore?" Gemini turns the question into a database query. Without a key, a rule-based analyzer does the same |
+| Communication | Petitioner ↔ official chat (Stream Chat) on each case |
+
+Everything runs locally with **no cloud accounts**:
+- **Without `MONGODB_URI`**, an embedded MongoDB stores data in `server/.localdb`.
+- **Without Supabase**, sign-in uses the server's own JWT.
+- **Without `GEMINI_API_KEY`**, priority and Smart Query use the offline rules.
+
+---
+
+## Run it
+
+```bash
+npm install                 # root (concurrently)
+npm run install:all         # server + client dependencies
+npm run dev                 # server :5000 (nodemon) + client :3000
+```
+
+Open http://localhost:3000. On the first run the server seeds demo data:
+
+| Role | Login page | Credentials |
+|---|---|---|
+| Petitioner | `/login/petitioner` | `petitioner@example.com` / `Petitioner@123` |
+| Official (RTO, Egmore) | `/login/official` | `rto.egmore@example.com` / `Official@123` |
+| Official (Water, Egmore / Adyar) | `/login/official` | `water.egmore@example.com`, `water.adyar@example.com` / `Official@123` |
+| Official (Electricity) | `/login/official` | `electricity.egmore@example.com`, `electricity.adyar@example.com` / `Official@123` |
+| Admin | `/login/admin` | `admin@example.com` / `Admin@123`, Admin ID `ADM001` |
+
+Optional settings go in `server/.env` (see `server/.env.example`):
+- `MONGODB_URI` for a cloud database.
+- `GEMINI_API_KEY` for AI priority and Smart Query.
+- `STREAM_API_KEY/SECRET` for chat.
+- `JWT_SECRET`.
+- `CORS_ORIGINS` for a LAN demo.
+
+On the client, `REACT_APP_API_URL` points it at another server address.
+
+To start again from fresh demo data, stop the server and delete `server/.localdb/`.
+
+---
+
+## How to show the demo
+
+Allow about 8 minutes. Use three browser profiles (or one normal and two incognito windows): **Petitioner**, **RTO official**, **Admin**.
+
+| # | Who | Action | What to say |
+|---|---|---|---|
+| 1 | Petitioner | Log in → **Submit Grievance**: department *RTO*, district *Chennai*, division *Chennai Central*, taluk *Egmore*, title "Driving licence not issued" | "The citizen only says what and where. The system finds the responsible office." |
+| 2 | Petitioner | The dashboard shows the new petition ID and its priority | "Priority is analysed automatically. Urgent words like *accident* or *no water* raise it." |
+| 3 | Official (RTO) | **Pending** tab → the new case → **Accept** | "Routed straight to the Egmore RTO officer's queue." |
+| 4 | Official | **Start Progress** / **Resource Management**: funds, manpower, dates | "Resource needs are captured per case for planning." |
+| 5 | Official | **Update Timeline**: plan with milestones. Optionally reassign to the Adyar officer | "The citizen sees this plan on the tracking page." |
+| 6 | Visitor | Home page → **Track Grievance** with the petition ID | "Public tracking with no login, like a courier tracking number." |
+| 7 | Official | **Resolve**: upload the resolution document and add a note | "Proof of resolution is attached to the case." |
+| 8 | Petitioner | Give a rating and feedback. On another case, use **Escalate** with a reason | "The citizen closes the loop or escalates." |
+| 9 | Admin | **Escalated** tab (the seeded *Transformer sparking near school* is waiting) → respond or reassign | "Escalations land with the grievance cell head." |
+| 10 | Admin | Dashboard charts: department stats, monthly trend, resource management | "State-wide view of load and resource needs." |
+| 11 | Admin | **Smart Query**: "How many pending cases in Water?", "What resources are needed in Egmore?", "List officials in RTO department" | "Ask the database in plain English." |
+
+**If something fails live:**
+- No internet means no Gemini. Smart Query and priority switch to the offline analyzer automatically.
+- Chat needs Stream keys. If they aren't set, skip that step.
+
+---
+
+## Presentation guide
+
+Use 9–10 slides.
+
+1. **Title.** Theervu-Kaanal: transparent, accountable grievance redressal for Tamil Nadu.
+2. **Problem.** Misrouted petitions, no tracking, no escalation. Use CM Cell or CPGRAMS backlog figures if you have them.
+3. **Users.** Petitioner, department official, grievance-cell admin.
+4. **Solution.** Lifecycle diagram: Submit → Auto-route → Accept → Plan → Resolve → Feedback, with Escalate looping back to the Admin.
+5. **Architecture.** React (MUI) client → Express API (JWT; Supabase optional) → MongoDB (Mongoose; embedded fallback) → Gemini for priority and Smart Query → Stream Chat → node-cron for escalations → Multer for documents.
+6. **Smart Query.** Natural language → intent and filters (LLM, or rules offline) → safe MongoDB query → formatted answer. Show one example end to end.
+7. **Accountability features.** Timeline, escalation, repetitive-case detection, feedback ratings.
+8. **Live demo.** Follow the flow above.
+9. **Impact.** Faster resolution, a public audit trail, and data-driven resource allocation. SDG 16 (Strong Institutions) and SDG 6/7 (water and energy services).
+10. **Future work.** Tamil voice filing, WhatsApp/IVR intake, GIS heat-maps of complaints, SLA dashboards per officer, and integration with the TN CM Helpline.
+
+Likely viva questions:
+- *How is a grievance routed?* The department plus the taluk, district and division chosen in the form are matched to the official for that jurisdiction (`findOfficialsForJurisdiction`).
+- *How does escalation work?* The petitioner can escalate an eligible case with a reason. A daily cron job (`checkEligibleEscalations`) flags overdue cases, and the admin responds from the Escalated tab.
+- *Is the Smart Query safe?* It only builds queries from allow-listed fields and values (`VALID_DEPARTMENTS`, `VALID_STATUSES` and so on). It never executes raw model output.
+
+---
 
 ## Prerequisites
 

@@ -28,7 +28,9 @@ import {
     escalateGrievance,
     getEscalatedGrievances,
     analyzePriorityWithGemini,
-    checkRepetitiveCases
+    checkRepetitiveCases,
+    submitWorkTimeline,
+    assignGrievance
 } from '../controllers/grievanceController.js';
 import { processDocument, upload } from '../controllers/documentController.js';
 import Grievance from '../models/Grievance.js';
@@ -125,6 +127,8 @@ router.get('/:id/resource-management', auth, getResourceManagement);
 // Timeline Stage routes
 router.post('/:id/timeline-stage', auth, updateTimelineStage);
 router.get('/:id/timeline-stages', getTimelineStages);
+router.post('/:id/timeline', auth, submitWorkTimeline);
+router.post('/:id/assign', auth, assignGrievance);
 
 // Escalation routes
 router.post('/:id/escalate', auth, escalateGrievance);

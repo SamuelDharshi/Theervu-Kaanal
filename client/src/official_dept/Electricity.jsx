@@ -10,6 +10,7 @@ import "../styles/Chat.css";
 import NotificationBell from '../components/NotificationBell';
 import { Dropdown } from 'react-bootstrap';
 import RepeatedCaseIndicator from '../components/RepeatedCaseIndicator';
+import { API_BASE } from '../config';
 
 const ElectricityDashboard = () => {
   const navigate = useNavigate();
@@ -161,7 +162,7 @@ const ElectricityDashboard = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/grievances/department/Electricity/${activeTab}${priorityFilter ? `?priority=${priorityFilter}` : ''}`,
+        `${API_BASE}/api/grievances/department/Electricity/${activeTab}${priorityFilter ? `?priority=${priorityFilter}` : ''}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -184,7 +185,7 @@ const ElectricityDashboard = () => {
       const processedGrievances = await Promise.all(data.grievances.map(async (grievance) => {
         try {
           // Call Gemini AI for priority analysis
-          const priorityResponse = await fetch('http://localhost:5000/api/grievances/analyze-priority', {
+          const priorityResponse = await fetch(`${API_BASE}/api/grievances/analyze-priority`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -265,7 +266,7 @@ const ElectricityDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/accept`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/accept`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -296,7 +297,7 @@ const ElectricityDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/decline`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/decline`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,7 +327,7 @@ const ElectricityDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/start-progress`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/start-progress`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -366,7 +367,7 @@ const ElectricityDashboard = () => {
           formData.append('document', file);
 
           // First upload the document
-          const uploadResponse = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/upload-resolution`, {
+          const uploadResponse = await fetch(`${API_BASE}/api/grievances/${grievanceId}/upload-resolution`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -381,7 +382,7 @@ const ElectricityDashboard = () => {
           }
 
           // Then resolve the grievance
-          const resolveResponse = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/resolve`, {
+          const resolveResponse = await fetch(`${API_BASE}/api/grievances/${grievanceId}/resolve`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -426,7 +427,7 @@ const ElectricityDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/resource-management`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/resource-management`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -461,7 +462,7 @@ const ElectricityDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch(`http://localhost:5000/api/grievances/${grievanceId}/timeline-stage`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/timeline-stage`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -528,7 +529,7 @@ const ElectricityDashboard = () => {
                   <div className="mb-3">
                     <h5 className="font-medium">Original Document:</h5>
                     <a
-                      href={`https://theervu-kaanal.onrender.com/uploads/documents/${selectedGrievance.originalDocument.path.split(/[\/\\]/).pop()}`}
+                      href={`${API_BASE}/uploads/documents/${selectedGrievance.originalDocument.path.split(/[\/\\]/).pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center mt-2 px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"
@@ -553,7 +554,7 @@ const ElectricityDashboard = () => {
                       {selectedGrievance.attachments.map((attachment, index) => (
                         <a
                           key={index}
-                          href={`https://theervu-kaanal.onrender.com/uploads/documents/${attachment.path.split(/[\/\\]/).pop()}`}
+                          href={`${API_BASE}/uploads/documents/${attachment.path.split(/[\/\\]/).pop()}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"

@@ -2,8 +2,8 @@ import jwt from 'jsonwebtoken';
 import Petitioner from '../models/Petitioner.js';
 import Official from '../models/Official.js';
 import Admin from '../models/Admin.js';
-import { JWT_SECRET, JWT_OPTIONS } from '../config/jwt.js';
-import { supabase } from '../config/supabase.js';
+import { JWT_SECRET, JWT_OPTIONS, JWT_EXPIRY } from '../config/jwt.js';
+import { supabase, isSupabaseEnabled } from '../config/supabase.js';
 import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -25,10 +25,10 @@ export const generateToken = (user) => {
     const payload = {
         id: user._id.toString(),
         role: (user.role || 'petitioner').toLowerCase(),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+        ...(user.department && { department: user.department })
     };
 
-    return jwt.sign(payload, JWT_SECRET, JWT_OPTIONS);
+    return jwt.sign(payload, JWT_SECRET, { ...JWT_OPTIONS, expiresIn: JWT_EXPIRY });
 };
 
 export const verifyToken = (token) => {
@@ -47,14 +47,22 @@ export const verifyToken = (token) => {
     }
 };
 
+const MODELS = { petitioner: Petitioner, official: Official, admin: Admin };
+
+const findUserByEmail = async (email) => {
+    for (const [role, Model] of Object.entries(MODELS)) {
+        const user = await Model.findOne({ email });
+        if (user) return { user, role };
+    }
+    return null;
+};
+
+// Accepts either an app JWT (issued by /api/auth/*/login) or, when Supabase is
+// configured, a Supabase access token.
 export const auth = async (req, res, next) => {
     try {
-        // Log request headers for debugging
-        console.log('Auth Headers:', req.headers);
-
         const authHeader = req.header('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            console.log('❌ No Bearer token found');
             return res.status(401).json({
                 message: 'No authentication token provided',
                 code: 'TOKEN_MISSING'
@@ -62,61 +70,53 @@ export const auth = async (req, res, next) => {
         }
 
         const token = authHeader.replace('Bearer ', '');
+        let found = null;
+        let supabaseId;
 
-        // Verify Supabase token
-        const { data: { user: supabaseUser }, error: supabaseError } = await supabase.auth.getUser(token);
+        // 1. App-issued JWT
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+            const role = (decoded.role || '').toLowerCase();
+            const Model = MODELS[role];
+            if (Model && mongoose.Types.ObjectId.isValid(decoded.id)) {
+                const user = await Model.findById(decoded.id);
+                if (user) found = { user, role };
+            }
+        } catch (jwtError) {
+            if (jwtError.name === 'TokenExpiredError') {
+                return res.status(401).json({ message: 'Token has expired', code: 'TOKEN_EXPIRED' });
+            }
+            // 2. Supabase access token (optional)
+            if (isSupabaseEnabled) {
+                const { data, error } = await supabase.auth.getUser(token);
+                if (!error && data?.user) {
+                    supabaseId = data.user.id;
+                    found = await findUserByEmail(data.user.email);
+                }
+            }
+        }
 
-        if (supabaseError || !supabaseUser) {
-            console.error('Supabase token verification failed:', supabaseError?.message);
+        if (!found) {
             return res.status(401).json({
                 message: 'Invalid or expired token',
                 code: 'INVALID_TOKEN'
             });
         }
 
-        // Get user role and details from metadata or database
-        const userEmail = supabaseUser.email;
-        
-        // Look up user in MongoDB to get role and other details
-        let user;
-        let userRole;
-
-        // Try to find user in each collection
-        user = await Petitioner.findOne({ email: userEmail });
-        if (user) {
-            userRole = 'petitioner';
-        } else {
-            user = await Official.findOne({ email: userEmail });
-            if (user) {
-                userRole = 'official';
-            } else {
-                user = await Admin.findOne({ email: userEmail });
-                if (user) {
-                    userRole = 'admin';
-                }
-            }
-        }
-
-        if (!user) {
-            console.error('User not found in database:', userEmail);
-            return res.status(401).json({
-                message: 'User not found',
-                code: 'USER_NOT_FOUND'
-            });
-        }
-
-        // Add user info to request
+        const { user, role } = found;
         req.user = {
             id: user._id.toString(),
-            supabaseId: supabaseUser.id,
-            role: userRole,
+            ...(supabaseId && { supabaseId }),
+            role,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            ...(user.department && { department: user.department })
+            ...(user.department && { department: user.department }),
+            ...(user.taluk && { taluk: user.taluk }),
+            ...(user.district && { district: user.district }),
+            ...(user.division && { division: user.division })
         };
 
-        console.log('✅ Authentication successful for user:', user.email);
         next();
     } catch (error) {
         console.error('Token verification failed:', error);
@@ -125,6 +125,14 @@ export const auth = async (req, res, next) => {
             code: 'INVALID_TOKEN'
         });
     }
+};
+
+// Restrict a route to one or more roles (use after auth)
+export const requireRole = (...roles) => (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+        return res.status(403).json({ message: 'Access denied', code: 'FORBIDDEN' });
+    }
+    next();
 };
 
 export default auth; 

@@ -416,14 +416,19 @@ router.post('/query', async (req, res) => {
         // Get context from previous messages
         const context = await getQueryContext(req.user.id);
 
-        // Initialize Gemini model
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const prompt = getQueryPrompt(query, context);
-
-        // Get Gemini's analysis
-        const result = await geminiModel.generateContent(prompt);
-        const analysisText = result.response.text();
-        console.log('Gemini Analysis:', analysisText);
+        // Gemini extracts intent + filters; without a working key the rule-based
+        // analyzer below produces the same JSON shape so the assistant still works.
+        let analysisText;
+        try {
+            if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not set');
+            const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const result = await geminiModel.generateContent(getQueryPrompt(query, context));
+            analysisText = result.response.text();
+            console.log('Gemini Analysis:', analysisText);
+        } catch (llmError) {
+            console.warn('Gemini unavailable, using offline query analyzer:', llmError.message.slice(0, 120));
+            analysisText = JSON.stringify(offlineAnalysis(query));
+        }
 
         // Parse and validate the analysis
         const analysis = parseAndValidateAnalysis(analysisText);
@@ -678,10 +683,11 @@ function parseAndValidateAnalysis(analysisText) {
 
         // Normalize status and priority fields
         if (analysis.params.status) {
-            const statusInput = analysis.params.status.charAt(0).toUpperCase() +
-                analysis.params.status.slice(1).toLowerCase();
+            const statusInput = VALID_STATUSES.find(
+                (v) => v.toLowerCase() === analysis.params.status.trim().toLowerCase().replace('-', ' ')
+            );
 
-            if (VALID_STATUSES.includes(statusInput)) {
+            if (statusInput) {
                 analysis.params.status = statusInput;
             } else {
                 console.warn(`Invalid status: ${analysis.params.status}`);
@@ -728,6 +734,54 @@ function parseAndValidateAnalysis(analysisText) {
     }
 }
 
+// Rule-based fallback for getQueryPrompt: same intents and params, from keywords.
+function offlineAnalysis(query) {
+    const q = query.toLowerCase();
+    const pick = (list) => list.find((v) => new RegExp(`\\b${v.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(q)) || null;
+    const caseId = (query.match(/\b(GRV\d{4,}|[a-f0-9]{24})\b/i) || [])[1] || null;
+
+    let intent = 'case_query';
+    if (caseId) intent = 'case_lookup';
+    else if (/\b(how many|count|number of|total)\b/.test(q)) intent = 'count_query';
+    else if (/\b(official|officer|staff|employee)s?\b/.test(q)) intent = 'official_info';
+    else if (/\bmanpower|workers needed|labou?r\b/.test(q)) intent = 'manpower_query';
+    else if (/\b(resource|fund|budget|requirement)s?\b/.test(q)) intent = 'resource_query';
+    else if (/\b(stat|statistic|summary|average|breakdown)s?\b/.test(q)) intent = 'stats_query';
+
+    let countTarget = 'cases';
+    if (/\b(official|officer|staff)s?\b/.test(q)) countTarget = 'officials';
+    else if (/\bfund|budget|money\b/.test(q)) countTarget = 'funds';
+    else if (/\bmanpower\b/.test(q)) countTarget = 'manpower';
+
+    const status = /\bin[ -]?progress|ongoing\b/.test(q)
+        ? 'in progress'
+        : /\bresolved|closed|completed\b/.test(q)
+            ? 'resolved'
+            : /\bdeclined|rejected\b/.test(q)
+                ? 'declined'
+                : /\bpending|new|open\b/.test(q)
+                    ? 'pending'
+                    : null;
+    const priority = (q.match(/\b(critical|high|medium|low)\b(?=[ -]?priority|\b)/) || [])[1] || null;
+
+    return {
+        intent,
+        params: {
+            department: pick(VALID_DEPARTMENTS),
+            division: pick(VALID_DIVISIONS),
+            district: pick(VALID_DISTRICTS),
+            taluk: pick(VALID_TALUKS),
+            priority,
+            status,
+            caseId,
+            searchValue: query,
+            designation: pick(VALID_DESIGNATIONS),
+            countTarget,
+            includeDetails: true
+        }
+    };
+}
+
 // Helper function to extract values from text
 function extractFromText(text, regex) {
     const match = text.match(regex);
@@ -763,7 +817,8 @@ async function buildMongoQuery(analysis) {
     const district = params.district?.toLowerCase();
     const taluk = params.taluk?.toLowerCase();
     const priority = params.priority?.toLowerCase();
-    const status = params.status?.toLowerCase();
+    // Grievance documents store 'in-progress' / 'rejected'
+    const status = { 'in progress': 'in-progress', declined: 'rejected' }[params.status?.toLowerCase()] || params.status?.toLowerCase();
     const caseId = params.caseId?.trim();
     const countTarget = params.countTarget?.toLowerCase() || 'cases';
 
@@ -828,24 +883,14 @@ async function buildMongoQuery(analysis) {
                 query.department = { $regex: `^${department}$`, $options: 'i' };
             }
 
-            // Handle other location filters that might apply to officials
-            if (division) {
-                query.jurisdiction = { $regex: division, $options: 'i' };
-            }
-            if (district) {
-                query.jurisdiction = query.jurisdiction || {};
-                query.jurisdiction.$regex = district;
-                query.jurisdiction.$options = 'i';
-            }
-            if (taluk) {
-                query.jurisdiction = query.jurisdiction || {};
-                query.jurisdiction.$regex = taluk;
-                query.jurisdiction.$options = 'i';
-            }
+            // Officials store their posting as taluk / district / division fields
+            if (division) query.division = { $regex: `^${division}$`, $options: 'i' };
+            if (district) query.district = { $regex: `^${district}$`, $options: 'i' };
+            if (taluk) query.taluk = { $regex: `^${taluk}$`, $options: 'i' };
 
             // Handle role/designation filters
-            if (params.searchValue) {
-                query.designation = { $regex: params.searchValue, $options: 'i' };
+            if (params.designation) {
+                query.designation = { $regex: params.designation, $options: 'i' };
             }
 
             console.log('Official Info Query:', JSON.stringify(query, null, 2));

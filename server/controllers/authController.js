@@ -5,7 +5,7 @@ import Petitioner from '../models/Petitioner.js';
 import Admin from '../models/Admin.js';
 import Grievance from '../models/Grievance.js';
 import { JWT_SECRET, JWT_OPTIONS } from '../config/jwt.js';
-import { supabase, supabaseAdmin } from '../config/supabase.js';
+import { supabase, isSupabaseEnabled } from '../config/supabase.js';
 
 // Helper function to calculate token expiration
 const calculateTokenExpiration = () => {
@@ -43,139 +43,81 @@ const generateToken = (user) => {
     return jwt.sign(payload, JWT_SECRET, JWT_OPTIONS);
 };
 
-// Token verification endpoint
-export const verifyToken = async (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
-                success: false,
-                message: 'No token provided'
-            });
-        }
+const MODELS = { petitioner: Petitioner, official: Official, admin: Admin };
 
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET, JWT_OPTIONS);
+const displayName = (user) => (user.firstName || user.lastName)
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    : (user.name || user.email.split('@')[0]);
 
-        // Find user based on role
-        let user;
-        switch (decoded.role.toLowerCase()) {
-            case 'petitioner':
-                user = await Petitioner.findById(decoded.id);
-                break;
-            case 'official':
-                user = await Official.findById(decoded.id);
-                break;
-            case 'admin':
-                user = await Admin.findById(decoded.id);
-                break;
-            default:
-                return res.status(401).json({
-                    success: false,
-                    message: 'Invalid user role'
-                });
-        }
+const buildUserPayload = (user, role) => ({
+    id: user._id.toString(),
+    name: displayName(user),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    role,
+    ...(role === 'official' && {
+        department: user.department,
+        employeeId: user.employeeId,
+        designation: user.designation,
+        taluk: user.taluk,
+        district: user.district,
+        division: user.division
+    }),
+    ...(role === 'admin' && { adminId: user.adminId, position: user.position })
+});
 
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Token is valid and user exists
-        return res.status(200).json({
-            success: true,
-            user: {
-                id: user._id,
-                email: user.email,
-                role: decoded.role,
-                name: user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`.trim()
-                    : user.name || user.email.split('@')[0]
-            }
-        });
-
-    } catch (error) {
-        console.error('Token verification error:', error);
-
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: 'Token has expired'
-            });
-        }
-
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid token'
-        });
+// Checks the password against the bcrypt hash stored in MongoDB first, then
+// (if configured) against Supabase Auth. Returns true when either succeeds.
+const checkPassword = async (user, email, password) => {
+    if (user?.password && await bcrypt.compare(password, user.password)) {
+        return true;
     }
+    if (isSupabaseEnabled) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        return !error && !!data?.user;
+    }
+    return false;
 };
 
-// Token Refresh
+const sendLoginResponse = (res, user, role) => {
+    const token = generateToken({ ...user.toObject(), role });
+    res.status(200).json({
+        message: 'Login successful',
+        token,
+        user: buildUserPayload(user, role)
+    });
+};
+
+// Token verification endpoint (auth middleware has already validated the token)
+export const verifyToken = async (req, res) => {
+    const Model = MODELS[req.user?.role];
+    const user = Model ? await Model.findById(req.user.id) : null;
+    if (!user) {
+        return res.status(401).json({ success: false, message: 'User not found' });
+    }
+    return res.status(200).json({
+        success: true,
+        user: buildUserPayload(user, req.user.role)
+    });
+};
+
+// Token Refresh - issues a fresh app token for an authenticated user
 export const refreshToken = async (req, res) => {
     try {
-        const authHeader = req.header('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
-                message: 'No authentication token provided',
-                code: 'TOKEN_MISSING'
-            });
-        }
-
-        const token = authHeader.replace('Bearer ', '');
-        const decoded = jwt.verify(token, JWT_SECRET, JWT_OPTIONS);
-
-        let user;
-        switch (decoded.role) {
-            case 'petitioner':
-                user = await Petitioner.findById(decoded.id);
-                break;
-            case 'official':
-                user = await Official.findById(decoded.id);
-                break;
-            case 'admin':
-                user = await Admin.findById(decoded.id);
-                break;
-            default:
-                return res.status(401).json({
-                    message: 'Invalid user role',
-                    code: 'INVALID_ROLE'
-                });
-        }
-
+        const Model = MODELS[req.user?.role];
+        const user = Model ? await Model.findById(req.user.id) : null;
         if (!user) {
-            return res.status(401).json({
-                message: 'User not found',
-                code: 'USER_NOT_FOUND'
-            });
+            return res.status(401).json({ message: 'User not found', code: 'USER_NOT_FOUND' });
         }
-
-        // Generate new token
-        const newToken = generateToken(user);
-
         res.json({
-            token: newToken,
-            user: {
-                id: user._id.toString(),
-                name: user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`.trim()
-                    : (user.name || `${user.email.split('@')[0]}`),
-                email: user.email,
-                role: decoded.role,
-                ...(decoded.department && { department: decoded.department }),
-                ...(decoded.taluk && { taluk: decoded.taluk }),
-                ...(decoded.district && { district: decoded.district }),
-                ...(decoded.division && { division: decoded.division })
-            }
+            token: generateToken({ ...user.toObject(), role: req.user.role }),
+            user: buildUserPayload(user, req.user.role)
         });
     } catch (error) {
         console.error('Token refresh error:', error);
-        res.status(401).json({
-            message: 'Failed to refresh token',
-            code: 'REFRESH_FAILED'
-        });
+        res.status(401).json({ message: 'Failed to refresh token', code: 'REFRESH_FAILED' });
     }
 };
 
@@ -183,57 +125,16 @@ export const refreshToken = async (req, res) => {
 export const loginPetitioner = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // Log incoming request data (without password)
-        console.log('📥 Petitioner Login attempt:', {
-            email,
-            password: '[REDACTED]'
-        });
-
-        // Check for required fields
         if (!email || !password) {
-            console.log('❌ Missing required fields:', { email: !!email, password: !!password });
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        // Authenticate with Supabase
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (authError || !authData.user) {
-            console.log('❌ Supabase authentication failed:', authError?.message);
-            return res.status(401).json({ error: 'Invalid credentials' });
+        const petitioner = await Petitioner.findOne({ email: email.trim() });
+        if (!petitioner || !(await checkPassword(petitioner, email, password))) {
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Find petitioner in MongoDB
-        const petitioner = await Petitioner.findOne({ email });
-        if (!petitioner) {
-            console.log('❌ Petitioner not found in database:', email);
-            return res.status(401).json({ error: 'User not found' });
-        }
-
-        // Set role explicitly
-        petitioner.role = 'petitioner';
-
-        console.log('✅ Petitioner logged in successfully:', petitioner.email);
-
-        // Return user data with Supabase session
-        res.status(200).json({
-            message: 'Login successful',
-            token: authData.session.access_token,
-            refreshToken: authData.session.refresh_token,
-            user: {
-                id: petitioner._id.toString(),
-                supabaseId: authData.user.id,
-                firstName: petitioner.firstName,
-                lastName: petitioner.lastName,
-                email: petitioner.email,
-                phone: petitioner.phone,
-                role: 'petitioner'
-            }
-        });
+        sendLoginResponse(res, petitioner, 'petitioner');
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -244,41 +145,22 @@ export const loginPetitioner = async (req, res) => {
 export const loginOfficial = async (req, res) => {
     try {
         const { email, password, department, employeeId } = req.body;
-
-        // Authenticate with Supabase
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (authError || !authData.user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        // Find official in MongoDB
-        const official = await Official.findOne({ email });
-        if (!official) {
-            return res.status(401).json({ error: 'User not found' });
+        const official = await Official.findOne({ email: email.trim() });
+        if (!official || !(await checkPassword(official, email, password))) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+        if (department && department !== official.department) {
+            return res.status(401).json({ error: `This account belongs to the ${official.department} department` });
+        }
+        if (employeeId && employeeId.trim() !== official.employeeId) {
+            return res.status(401).json({ error: 'Employee ID does not match this account' });
         }
 
-        res.status(200).json({
-            message: 'Login successful',
-            token: authData.session.access_token,
-            refreshToken: authData.session.refresh_token,
-            user: {
-                id: official._id.toString(),
-                supabaseId: authData.user.id,
-                firstName: official.firstName,
-                lastName: official.lastName,
-                email: official.email,
-                phone: official.phone,
-                role: 'official',
-                department: official.department,
-                taluk: official.taluk,
-                district: official.district,
-                division: official.division
-            }
-        });
+        sendLoginResponse(res, official, 'official');
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -288,38 +170,20 @@ export const loginOfficial = async (req, res) => {
 // Admin Login
 export const loginAdmin = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, adminId } = req.body;
+        if ((!email && !adminId) || !password) {
+            return res.status(400).json({ error: 'Admin ID or email, and password are required' });
+        }
 
-        // Authenticate with Supabase
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (authError || !authData.user) {
+        const admin = email ? await Admin.findOne({ email: email.trim() }) : await Admin.findOne({ adminId });
+        if (!admin || !(await checkPassword(admin, admin?.email || email, password))) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-
-        // Find admin in MongoDB
-        const admin = await Admin.findOne({ email });
-        if (!admin) {
-            return res.status(401).json({ error: 'User not found' });
+        if (adminId && adminId.trim() !== admin.adminId) {
+            return res.status(401).json({ error: 'Admin ID does not match this account' });
         }
 
-        res.status(200).json({
-            message: 'Login successful',
-            token: authData.session.access_token,
-            refreshToken: authData.session.refresh_token,
-            user: {
-                id: admin._id.toString(),
-                supabaseId: authData.user.id,
-                firstName: admin.firstName,
-                lastName: admin.lastName,
-                email: admin.email,
-                phone: admin.phone,
-                role: 'admin'
-            }
-        });
+        sendLoginResponse(res, admin, 'admin');
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -379,38 +243,30 @@ export const registerPetitioner = async (req, res) => {
             });
         }
 
-        // Register with Supabase
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    name,
-                    role: 'petitioner'
-                }
-            }
-        });
-
-        if (authError) {
-            console.error('Supabase registration error:', authError);
-            return res.status(400).json({
-                success: false,
-                message: authError.message || 'Registration with authentication service failed'
+        // Optionally mirror the account in Supabase Auth
+        let supabaseUserId;
+        if (isSupabaseEnabled) {
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { name, role: 'petitioner' } }
             });
+            if (authError) {
+                console.warn('Supabase sign-up failed, continuing with local account:', authError.message);
+            }
+            supabaseUserId = authData?.user?.id;
         }
 
-        // Hash password for MongoDB (keeping for compatibility)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [firstName, ...rest] = name.trim().split(/\s+/);
 
-        // Create new petitioner in MongoDB
         const petitioner = new Petitioner({
-            name,
+            firstName,
+            lastName: rest.join(' ') || '-',
             email,
             password: hashedPassword,
-            phone,
-            address,
-            supabaseId: authData.user?.id
+            phone: phone || 'N/A',
+            address
         });
 
         await petitioner.save();
@@ -420,15 +276,8 @@ export const registerPetitioner = async (req, res) => {
             success: true,
             message: 'Registration successful',
             data: {
-                token: authData.session?.access_token,
-                refreshToken: authData.session?.refresh_token,
-                user: {
-                    id: petitioner._id,
-                    supabaseId: authData.user?.id,
-                    name: petitioner.name,
-                    email: petitioner.email,
-                    role: 'petitioner'
-                }
+                token: generateToken({ ...petitioner.toObject(), role: 'petitioner' }),
+                user: { ...buildUserPayload(petitioner, 'petitioner'), ...(supabaseUserId && { supabaseId: supabaseUserId }) }
             }
         });
     } catch (error) {

@@ -17,7 +17,8 @@ import fs from 'fs';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cron from 'node-cron';
-import { checkEligibleEscalations } from './controllers/grievanceController.js';
+import { checkEligibleEscalations, listDepartmentOfficials } from './controllers/grievanceController.js';
+import auth from './middleware/auth.js';
 import smartQueryRouter from './routes/smartQuery.js';
 import usersRoutes from './routes/users.js';
 
@@ -95,9 +96,11 @@ app.use(cors({
         "http://localhost:3002",
         "http://localhost:5173",
         "https://tn-theervu-kaanal.vercel.app",
-        "https://tn-complaint-portal.vercel.app"
+        "https://tn-complaint-portal.vercel.app",
+        // Extra origins, comma separated (e.g. http://192.168.1.10:3000 for a LAN demo)
+        ...(process.env.CORS_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean)
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     preflightContinue: false,
@@ -122,6 +125,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/smart-query', smartQueryRouter);
 app.use('/api/users', usersRoutes);
+app.get('/api/officers', auth, listDepartmentOfficials);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

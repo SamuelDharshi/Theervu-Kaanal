@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRedirectPath } from '../utils/authUtils';
 import { supabase } from '../config/supabase';
+import { API_BASE } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -88,6 +89,26 @@ export const AuthProvider = ({ children }) => {
         // Check active session
         const initializeAuth = async () => {
             try {
+                if (!supabase) {
+                    // Local JWT mode: restore the stored session if the token is still valid
+                    const token = localStorage.getItem('token');
+                    const storedUser = localStorage.getItem('user');
+                    let decoded = null;
+                    try {
+                        decoded = token ? decodeToken(token) : null;
+                    } catch {
+                        decoded = null;
+                    }
+                    if (decoded && storedUser && (!decoded.exp || decoded.exp * 1000 > Date.now())) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setUser(null);
+                    }
+                    return;
+                }
+
                 const { data: { session }, error } = await supabase.auth.getSession();
                 
                 if (error) {
@@ -121,6 +142,7 @@ export const AuthProvider = ({ children }) => {
         initializeAuth();
 
         // Listen for auth changes
+        if (!supabase) return undefined;
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('Auth state changed:', event);
             
@@ -148,7 +170,7 @@ export const AuthProvider = ({ children }) => {
 
     const refreshUser = async (token) => {
         try {
-            const response = await fetch('https://theervu-kaanal.onrender.com/api/users/profile', {
+            const response = await fetch(`${API_BASE}/api/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 }
@@ -196,7 +218,7 @@ export const AuthProvider = ({ children }) => {
             // Extract email if it's an object
             const emailValue = typeof email === 'object' ? email.email : email;
 
-            const response = await fetch(`https://theervu-kaanal.onrender.com${endpoint}`, {
+            const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -256,7 +278,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             // Sign out from Supabase
-            await supabase.auth.signOut();
+            if (supabase) await supabase.auth.signOut();
             
             // Clear all auth-related data from localStorage
             localStorage.removeItem('token');
@@ -329,7 +351,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Ensure URL starts with backend server address
-        const baseUrl = 'https://theervu-kaanal.onrender.com';
+        const baseUrl = `${API_BASE}`;
         const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
 
         const defaultHeaders = {

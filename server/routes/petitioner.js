@@ -4,13 +4,21 @@ import { generateToken } from "../middleware/auth.js";
 import Petitioner from "../models/Petitioner.js";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
 // ✅ Register Petitioner
 router.post("/register", async (req, res) => {
     const { firstName, lastName, email, phone, address, city, state, pincode, password, confirmPassword } = req.body;
 
     try {
+        if (!firstName || !lastName || !email || !phone || !password) {
+            return res.status(400).json({ message: "First name, last name, email, phone and password are required" });
+        }
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            return res.status(400).json({ message: "Invalid email address" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
         if (password !== confirmPassword) {
             return res.status(400).json({ message: "Passwords do not match" });
         }
@@ -37,6 +45,10 @@ router.post("/register", async (req, res) => {
         res.status(201).json({ message: "Petitioner registered successfully!" });
 
     } catch (error) {
+        console.error("Petitioner registration error:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: Object.values(error.errors).map(e => e.message).join(', ') });
+        }
         res.status(500).json({ message: "Server error" });
     }
 });

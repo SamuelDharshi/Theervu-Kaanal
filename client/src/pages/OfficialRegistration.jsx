@@ -6,6 +6,7 @@ import { FileText, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import LocationDropdowns from '../components/LocationDropdowns';
+import { API_BASE } from '../config';
 
 const OfficialRegistration = () => {
   const navigate = useNavigate();
@@ -130,7 +131,7 @@ const OfficialRegistration = () => {
         return;
       }
 
-      const response = await axios.post("https://theervu-kaanal.onrender.com/api/register/official", formData);
+      const response = await axios.post(`${API_BASE}/api/register/official`, formData);
 
       if (response.status === 201) {
         toast.success("Official registration successful!");

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { API_BASE } from '../config';
 
 const SubmitGrievance = () => {
     const { user } = useAuth();
@@ -80,9 +81,10 @@ const SubmitGrievance = () => {
         }
 
         try {
-            const response = await axios.post('/api/grievances', formData, {
+            const response = await axios.post(`${API_BASE}/api/grievances`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
 

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { API_BASE } from '../config';
 
 const UploadDocument = () => {
     const { user } = useAuth();
@@ -74,9 +75,10 @@ const UploadDocument = () => {
         formData.append('coordinates', JSON.stringify(coordinates));
 
         try {
-            const response = await axios.post('/api/grievances/upload-document', formData, {
+            const response = await axios.post(`${API_BASE}/api/grievances/upload-document`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
 

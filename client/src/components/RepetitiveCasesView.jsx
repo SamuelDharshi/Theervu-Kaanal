@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Table, Spinner, Alert } from 'react-bootstrap';
 import axios from 'axios';
+import { API_BASE } from '../config';
 
 const RepetitiveCasesView = ({ grievanceId }) => {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,9 @@ const RepetitiveCasesView = ({ grievanceId }) => {
     const fetchRepetitiveCases = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/grievances/${grievanceId}/repetitive-cases`);
+        const response = await axios.get(`${API_BASE}/api/grievances/${grievanceId}/repetitive-cases`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
         setData(response.data);
         setError(null);
       } catch (err) {

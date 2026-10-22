@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Badge, Dropdown } from 'react-bootstrap';
+import { API_BASE } from '../config';
 
 const NotificationBell = ({ userId, userRole }) => {
     const [notifications, setNotifications] = useState([]);
@@ -49,7 +50,7 @@ const NotificationBell = ({ userId, userRole }) => {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`https://theervu-kaanal.onrender.com/api/notifications/user/${userId}`, {
+            const response = await axios.get(`${API_BASE}/api/notifications/user/${userId}`, {
                 headers: getAuthHeader()
             });
 
@@ -86,7 +87,7 @@ const NotificationBell = ({ userId, userRole }) => {
     // Mark notification as read
     const markAsRead = async (notificationId) => {
         try {
-            await axios.put(`https://theervu-kaanal.onrender.com/api/notifications/${notificationId}/read`, {}, {
+            await axios.put(`${API_BASE}/api/notifications/${notificationId}/read`, {}, {
                 headers: getAuthHeader()
             });
             setNotifications(notifications.map(n =>
@@ -102,7 +103,7 @@ const NotificationBell = ({ userId, userRole }) => {
     // Mark all as read
     const markAllAsRead = async () => {
         try {
-            await axios.put(`https://theervu-kaanal.onrender.com/api/notifications/user/${userId}/read-all`, {}, {
+            await axios.put(`${API_BASE}/api/notifications/user/${userId}/read-all`, {}, {
                 headers: getAuthHeader()
             });
             setNotifications(notifications.map(n => ({ ...n, read: true })));

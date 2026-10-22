@@ -10,7 +10,9 @@ export const registerOfficial = async (req, res) => {
     const { email, password, department } = req.body;
 
     try {
-        console.log('📥 Received Data:', req.body);  // ✅ Log incoming data
+        if (!email || !password || password.length < 6) {
+            return res.status(400).json({ error: 'Email and a password of at least 6 characters are required.' });
+        }
 
         // Check if Official already exists
         const existingOfficial = await Official.findOne({ email });

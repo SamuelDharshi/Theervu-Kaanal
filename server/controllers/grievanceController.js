@@ -85,6 +85,12 @@ export const getResourceManagement = async (req, res) => {
     }
 };
 
+// Grievances are addressed either by Mongo _id or by the public petitionId (GRVxxxxxx)
+const findGrievanceByAnyId = (id) =>
+    mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id
+        ? Grievance.findById(id)
+        : Grievance.findOne({ petitionId: id });
+
 // Update timeline stage
 export const updateTimelineStage = async (req, res) => {
     try {
@@ -96,7 +102,7 @@ export const updateTimelineStage = async (req, res) => {
             return res.status(400).json({ error: 'All timeline stage fields are required' });
         }
 
-        const grievance = await Grievance.findById(id);
+        const grievance = await findGrievanceByAnyId(id);
         if (!grievance) {
             return res.status(404).json({ error: 'Grievance not found' });
         }
@@ -128,7 +134,7 @@ export const getTimelineStages = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const grievance = await Grievance.findOne({ petitionId: id });
+        const grievance = await findGrievanceByAnyId(id);
         if (!grievance) {
             return res.status(404).json({ error: 'Grievance not found' });
         }
@@ -253,7 +259,77 @@ const analyzePriorityLocally = (grievance) => {
     }
 };
 
-// Update the createGrievance function's Gemini integration
+// Determine priority with Gemini when GEMINI_API_KEY is configured, otherwise
+// (or on any Gemini error) with the local keyword analysis above.
+export const determinePriority = async ({ title, description, department }) => {
+    const local = () => {
+        const r = analyzePriorityLocally({ title, description, department });
+        return {
+            priority: r.priority,
+            priorityExplanation: r.explanation,
+            impactAssessment: r.impactAssessment,
+            recommendedResponseTime: r.recommendedResponseTime,
+            source: 'local'
+        };
+    };
+
+    if (!process.env.GEMINI_API_KEY) return local();
+
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+            generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
+        });
+        const prompt = `Analyze the following grievance details and determine its priority level:
+
+Title: ${title}
+Description: ${description}
+Department: ${department}
+
+Consider public safety, service disruption, and time sensitivity.
+Respond in this exact format:
+PRIORITY: [High/Medium/Low]
+PRIORITY_EXPLANATION: [Brief explanation]
+IMPACT_ASSESSMENT: [Impact analysis]
+RECOMMENDED_RESPONSE_TIME: [Timeframe]`;
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const pick = (re) => text.match(re)?.[1]?.trim();
+        const rawPriority = (pick(/PRIORITY:\s*([^\n]+)/i) || '').replace(/[^a-z]/gi, '');
+        const priority = ['High', 'Medium', 'Low'].find(p => p.toLowerCase() === rawPriority.toLowerCase());
+        if (!priority) return local();
+        return {
+            priority,
+            priorityExplanation: pick(/PRIORITY_EXPLANATION:\s*([^\n]+)/i) || 'Priority determined by AI analysis',
+            impactAssessment: pick(/IMPACT_ASSESSMENT:\s*([^\n]+)/i) || 'Impact assessment pending',
+            recommendedResponseTime: pick(/RECOMMENDED_RESPONSE_TIME:\s*([^\n]+)/i) || 'Standard response time',
+            source: 'gemini'
+        };
+    } catch (error) {
+        console.error('Gemini priority analysis failed, using local analysis:', error.message);
+        return local();
+    }
+};
+
+const ciEquals = (field, value) => ({ $expr: { $eq: [{ $toLower: `$${field}` }, String(value).toLowerCase()] } });
+
+// Officials for a jurisdiction: exact taluk/division/district match first, then
+// district level, then anyone in the department, so a grievance is never orphaned.
+export const findOfficialsForJurisdiction = async ({ department, taluk, district, division }) => {
+    let officials = await Official.find({
+        department,
+        $and: [ciEquals('taluk', taluk), ciEquals('district', district), ciEquals('division', division)]
+    });
+    if (officials.length) return { officials, matchLevel: 'jurisdiction' };
+
+    officials = await Official.find({ department, $and: [ciEquals('district', district)] });
+    if (officials.length) return { officials, matchLevel: 'district' };
+
+    officials = await Official.find({ department });
+    return { officials, matchLevel: officials.length ? 'department' : 'none' };
+};
+
 export const createGrievance = async (req, res) => {
     try {
         // Debug information
@@ -262,6 +338,10 @@ export const createGrievance = async (req, res) => {
         console.log('- Body:', req.body);
         console.log('- Files:', req.files);
         console.log('- User:', req.user);
+
+        if (req.user.role !== 'petitioner') {
+            return res.status(403).json({ error: 'Only petitioners can submit grievances' });
+        }
 
         const {
             title,
@@ -305,18 +385,29 @@ export const createGrievance = async (req, res) => {
             });
         }
 
+        if (title.trim().length < 5 || description.trim().length < 10) {
+            return res.status(400).json({
+                error: 'Title must be at least 5 characters and description at least 10 characters'
+            });
+        }
+
         // Find matching officials based on department, taluk, district, and division
-        const matchingOfficials = await Official.find({
-            department,
-            taluk,
-            district,
-            division
+        const { officials: matchingOfficials, matchLevel } = await findOfficialsForJurisdiction({
+            department, taluk, district, division
         });
 
         if (!matchingOfficials.length) {
             return res.status(404).json({
-                error: 'No officials found in the specified taluk, district, and division'
+                error: `No ${department} officials are registered yet. Please try again later.`
             });
+        }
+
+        // Automatic priority classification (Gemini or local keyword analysis)
+        const priorityResult = await determinePriority({ title, description, department });
+
+        let parsedCoordinates = coordinates;
+        if (typeof coordinates === 'string') {
+            try { parsedCoordinates = JSON.parse(coordinates); } catch { parsedCoordinates = undefined; }
         }
 
         // Create grievance data object
@@ -328,20 +419,20 @@ export const createGrievance = async (req, res) => {
             taluk: taluk.trim(),
             district: district.trim(),
             division: division.trim(),
-            coordinates: coordinates || null,
+            ...(parsedCoordinates?.latitude && parsedCoordinates?.longitude && { coordinates: parsedCoordinates }),
             petitioner: req.user.id,
             assignedOfficials: matchingOfficials.map(official => official._id),
             status: 'pending',
             portal_type: 'GRS',
-            priority: 'Medium', // Default priority
-            priorityExplanation: 'Initial priority set to Medium',
-            impactAssessment: 'Impact assessment pending',
-            recommendedResponseTime: 'Standard response time',
+            priority: priorityResult.priority,
+            priorityExplanation: priorityResult.priorityExplanation,
+            impactAssessment: priorityResult.impactAssessment,
+            recommendedResponseTime: priorityResult.recommendedResponseTime,
             statusHistory: [{
                 status: 'pending',
                 updatedBy: req.user.id,
                 updatedByType: 'petitioner',
-                comment: 'Grievance submitted'
+                comment: `Grievance submitted (priority ${priorityResult.priority}, routed at ${matchLevel} level)`
             }]
         };
 
@@ -377,7 +468,8 @@ export const createGrievance = async (req, res) => {
 
         res.status(201).json({
             message: 'Grievance created successfully',
-            grievance
+            grievance,
+            routing: { matchLevel, officials: matchingOfficials.length }
         });
     } catch (error) {
         console.error('Error creating grievance:', error);
@@ -481,7 +573,7 @@ export const getDepartmentGrievances = async (req, res) => {
         // Get grievances with all necessary fields
         const grievances = await Grievance.find(query)
             .select('petitionId title description department location status createdAt updatedAt assignedTo assignedOfficials resolutionDocument originalDocument attachments priority')
-            .populate('petitioner', 'name email')
+            .populate('petitioner', 'firstName lastName email phone')
             .populate('assignedTo', 'firstName lastName email')
             .sort({ createdAt: -1 });
 
@@ -689,8 +781,13 @@ export const updateGrievanceStatus = async (req, res) => {
             return res.status(404).json({ error: 'Grievance not found' });
         }
 
-        if (grievance.assignedTo.toString() !== officialId) {
+        if (grievance.assignedTo?.toString() !== officialId) {
             return res.status(403).json({ error: 'Not authorized to update this grievance' });
+        }
+
+        const allowedStatuses = ['pending', 'assigned', 'in-progress', 'resolved', 'rejected'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ error: `Status must be one of: ${allowedStatuses.join(', ')}` });
         }
 
         // Update grievance
@@ -698,8 +795,8 @@ export const updateGrievanceStatus = async (req, res) => {
         grievance.statusHistory.push({
             status,
             updatedBy: officialId,
-            updatedByType: 'Official',
-            comment
+            updatedByType: 'official',
+            comment: comment || `Status changed to ${status}`
         });
 
         await grievance.save();
@@ -719,7 +816,7 @@ export const getGrievanceStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const grievance = await Grievance.findById(id)
-            .populate('petitioner', 'name email')
+            .populate('petitioner', 'firstName lastName email phone')
             .populate('assignedTo', 'firstName lastName email');
 
         if (!grievance) {
@@ -777,7 +874,7 @@ export const getChatMessages = async (req, res) => {
         const userId = req.user.id;
 
         const grievance = await Grievance.findById(id)
-            .populate('petitioner', 'name email')
+            .populate('petitioner', 'firstName lastName email phone')
             .populate('assignedTo', 'firstName lastName email');
 
         if (!grievance) {
@@ -789,7 +886,8 @@ export const getChatMessages = async (req, res) => {
             return res.status(403).json({ error: 'Not authorized to view chat messages' });
         }
 
-        if (req.user.role === 'petitioner' && grievance.petitioner.toString() !== userId) {
+        const petitionerId = (grievance.petitioner?._id || grievance.petitioner)?.toString();
+        if (req.user.role === 'petitioner' && petitionerId !== userId) {
             return res.status(403).json({ error: 'Not authorized to view chat messages' });
         }
 
@@ -817,6 +915,13 @@ export const sendChatMessage = async (req, res) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
+        if (!message || !String(message).trim()) {
+            return res.status(400).json({ error: 'Message cannot be empty' });
+        }
+        if (!['official', 'petitioner'].includes(userRole)) {
+            return res.status(403).json({ error: 'Only the petitioner and assigned official can chat' });
+        }
+
         const grievance = await Grievance.findById(id);
         if (!grievance) {
             return res.status(404).json({ error: 'Grievance not found' });
@@ -835,7 +940,7 @@ export const sendChatMessage = async (req, res) => {
         grievance.chatMessages.push({
             sender: userId,
             senderType: userRole === 'official' ? 'Official' : 'Petitioner',
-            message
+            message: String(message).trim().slice(0, 2000)
         });
 
         await grievance.save();
@@ -890,7 +995,7 @@ export const uploadResolutionDocument = async (req, res) => {
 
         // Check if official is authorized (either assigned directly or in assignedOfficials array)
         const isDirectlyAssigned = grievance.assignedTo && grievance.assignedTo.toString() === officialId;
-        const isInAssignedOfficials = grievance.assignedOfficials && grievance.assignedOfficials.includes(officialId);
+        const isInAssignedOfficials = (grievance.assignedOfficials || []).some(o => o.toString() === officialId);
         const isAuthorized = isDirectlyAssigned || isInAssignedOfficials;
 
         console.log('Authorization check:', {
@@ -1018,7 +1123,7 @@ export const getOfficialFeedback = async (req, res) => {
             assignedTo: id,
             'feedback': { $exists: true }
         })
-            .populate('petitioner', 'name email')
+            .populate('petitioner', 'firstName lastName email phone')
             .select('title feedback resolutionDocument');
 
         res.json({
@@ -1047,15 +1152,23 @@ export const resolveGrievance = async (req, res) => {
             return res.status(404).json({ error: 'Grievance not found' });
         }
 
-        if (grievance.assignedTo.toString() !== officialId) {
+        if (grievance.assignedTo?.toString() !== officialId) {
             return res.status(403).json({ error: 'Not authorized to resolve this grievance' });
+        }
+
+        // Uploading the resolution document already marks the grievance resolved;
+        // in that case just record the resolution note.
+        if (grievance.status === 'resolved' && grievance.resolutionDocument?.path) {
+            grievance.resolution = { text: resolution || 'Resolved', date: new Date() };
+            await grievance.save();
+            return res.json({ message: 'Grievance resolved successfully', grievance });
         }
 
         if (grievance.status !== 'in-progress') {
             return res.status(400).json({ error: 'Grievance must be in progress to be resolved' });
         }
 
-        if (!grievance.resolutionDocument) {
+        if (!grievance.resolutionDocument?.path) {
             return res.status(400).json({ error: 'Resolution document must be uploaded before marking as resolved' });
         }
 
@@ -1097,7 +1210,7 @@ export const startProgress = async (req, res) => {
             return res.status(404).json({ error: 'Grievance not found' });
         }
 
-        if (grievance.assignedTo.toString() !== officialId) {
+        if (grievance.assignedTo?.toString() !== officialId) {
             return res.status(403).json({ error: 'Not authorized to update this grievance' });
         }
 
@@ -1273,7 +1386,10 @@ export const uploadDocumentAndCreateGrievance = async (req, res) => {
             taluk,
             division,
             district,
-            priority: 'Medium'
+            priority: 'Medium',
+            priorityExplanation: 'Document grievance - priority to be confirmed by the official',
+            impactAssessment: 'Impact assessment pending document review',
+            recommendedResponseTime: '3-5 working days'
         });
 
         await grievance.save();
@@ -1297,12 +1413,14 @@ export const uploadDocumentAndCreateGrievance = async (req, res) => {
             assignedOfficials: matchingOfficials.map(o => ({
                 id: o._id,
                 name: `${o.firstName} ${o.lastName}`,
-                distance: calculateDistance(
-                    parsedCoordinates.latitude,
-                    parsedCoordinates.longitude,
-                    o.officeCoordinates.latitude,
-                    o.officeCoordinates.longitude
-                )
+                distance: (parsedCoordinates?.latitude && o.officeCoordinates?.latitude)
+                    ? calculateDistance(
+                        parsedCoordinates.latitude,
+                        parsedCoordinates.longitude,
+                        o.officeCoordinates.latitude,
+                        o.officeCoordinates.longitude
+                    )
+                    : null
             }))
         });
     } catch (error) {
@@ -1352,10 +1470,24 @@ async function getCoordinatesFromLocation(location) {
 export const escalateGrievance = async (req, res) => {
     try {
         const { id } = req.params;
+        const { escalationReason } = req.body || {};
         const grievance = await Grievance.findById(id);
 
         if (!grievance) {
-            return res.status(404).json({ message: 'Grievance not found' });
+            return res.status(404).json({ error: 'Grievance not found' });
+        }
+
+        if (req.user.role !== 'petitioner' || grievance.petitioner.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Only the petitioner who filed this grievance can escalate it' });
+        }
+        if (grievance.status === 'resolved') {
+            return res.status(400).json({ error: 'Resolved grievances cannot be escalated' });
+        }
+        if (grievance.isEscalated && grievance.escalationStatus === 'Pending') {
+            return res.status(400).json({ error: 'This grievance is already escalated and awaiting admin response' });
+        }
+        if (!escalationReason || !escalationReason.trim()) {
+            return res.status(400).json({ error: 'Please provide a reason for escalation' });
         }
 
         // Find all admin users
@@ -1375,13 +1507,17 @@ export const escalateGrievance = async (req, res) => {
         // Update grievance - keep the current status but mark as escalated
         grievance.isEscalated = true;
         grievance.escalatedAt = new Date();
+        grievance.escalatedBy = req.user.id;
+        grievance.escalationReason = escalationReason.trim();
+        grievance.escalationStatus = 'Pending';
+        grievance.escalationResponse = undefined;
 
         // Add to status history with the current status
         grievance.statusHistory.push({
             status: grievance.status, // Use the current status
-            updatedBy: req.user ? req.user.id : 'system',
-            updatedByType: req.user ? req.user.role : 'system',
-            comment: 'Grievance escalated to admin'
+            updatedBy: req.user.id,
+            updatedByType: 'petitioner',
+            comment: `Grievance escalated to admin: ${escalationReason.trim()}`
         });
 
         // Add timeline stage for escalation
@@ -1399,7 +1535,7 @@ export const escalateGrievance = async (req, res) => {
         });
     } catch (error) {
         console.error('Error escalating grievance:', error);
-        res.status(500).json({ message: 'Error escalating grievance' });
+        res.status(500).json({ error: 'Error escalating grievance' });
     }
 };
 
@@ -1592,93 +1728,8 @@ export const analyzePriorityWithGemini = async (req, res) => {
             return res.status(400).json({ error: 'Title, description, and department are required' });
         }
 
-        // Initialize Gemini AI with error handling
-        let priority = 'Medium';
-        let priorityExplanation = 'Priority determined based on grievance content';
-        let impactAssessment = 'Impact assessment pending';
-        let recommendedResponseTime = 'Standard response time';
-
-        try {
-            if (!process.env.GEMINI_API_KEY) {
-                console.error('GEMINI_API_KEY is not set in environment variables');
-                throw new Error('GEMINI_API_KEY is not configured');
-            }
-
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({
-                model: "gemini-2.0-flash",
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 1024,
-                }
-            });
-
-            const prompt = {
-                contents: [{
-                    parts: [{
-                        text: `
-                            Analyze the following grievance details and determine its priority level:
-                            
-                            Title: ${title}
-                            Description: ${description}
-                            Department: ${department}
-                            
-                            Please analyze the severity, urgency, and impact of this grievance.
-                            Consider factors like public safety, service disruption, and time sensitivity.
-                            
-                            Respond in this exact format:
-                            PRIORITY: [High/Medium/Low]
-                            PRIORITY_EXPLANATION: [Brief explanation]
-                            IMPACT_ASSESSMENT: [Impact analysis]
-                            RECOMMENDED_RESPONSE_TIME: [Timeframe]
-                        `
-                    }]
-                }]
-            };
-
-            try {
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const priorityResponse = response.text();
-
-                // Extract priority information with better error handling
-                const priorityMatch = priorityResponse.match(/PRIORITY:\s*([^\n]+)/i);
-                const priorityExplanationMatch = priorityResponse.match(/PRIORITY_EXPLANATION:\s*([^\n]+)/i);
-                const impactAssessmentMatch = priorityResponse.match(/IMPACT_ASSESSMENT:\s*([^\n]+)/i);
-                const recommendedResponseTimeMatch = priorityResponse.match(/RECOMMENDED_RESPONSE_TIME:\s*([^\n]+)/i);
-
-                if (priorityMatch) priority = priorityMatch[1].trim();
-                if (priorityExplanationMatch) priorityExplanation = priorityExplanationMatch[1].trim();
-                if (impactAssessmentMatch) impactAssessment = impactAssessmentMatch[1].trim();
-                if (recommendedResponseTimeMatch) recommendedResponseTime = recommendedResponseTimeMatch[1].trim();
-
-            } catch (aiError) {
-                console.error('Error in Gemini content generation:', aiError);
-                // Fallback to local priority analysis if Gemini fails
-                const localResult = analyzePriorityLocally({ title, description, department });
-                priority = localResult.priority;
-                priorityExplanation = localResult.explanation;
-                impactAssessment = localResult.impactAssessment;
-                recommendedResponseTime = localResult.recommendedResponseTime;
-            }
-        } catch (error) {
-            console.error('Error in Gemini initialization:', error);
-            // Fallback to local priority analysis
-            const localResult = analyzePriorityLocally({ title, description, department });
-            priority = localResult.priority;
-            priorityExplanation = localResult.explanation;
-            impactAssessment = localResult.impactAssessment;
-            recommendedResponseTime = localResult.recommendedResponseTime;
-        }
-
-        res.status(200).json({
-            priority,
-            priorityExplanation,
-            impactAssessment,
-            recommendedResponseTime
-        });
+        const result = await determinePriority({ title, description, department });
+        res.status(200).json(result);
     } catch (error) {
         console.error('Error analyzing priority:', error);
         res.status(500).json({
@@ -1793,3 +1844,117 @@ function calculateTextSimilarity(text1, text2) {
     // Calculate cosine similarity
     return cosineSimilarity(vec1, vec2);
 }
+
+
+// Plan a work timeline (start/end + milestones). Stored as timeline stages so
+// the petitioner sees them in the tracking view.
+export const submitWorkTimeline = async (req, res) => {
+    try {
+        const { startDate, endDate, milestones = [] } = req.body;
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: 'Start date and end date are required' });
+        }
+        if (new Date(endDate) < new Date(startDate)) {
+            return res.status(400).json({ error: 'End date cannot be before start date' });
+        }
+        const grievance = await findGrievanceByAnyId(req.params.id);
+        if (!grievance) return res.status(404).json({ error: 'Grievance not found' });
+        if (req.user.role === 'official' && req.user.department && grievance.department !== req.user.department) {
+            return res.status(403).json({ error: 'This grievance belongs to another department' });
+        }
+
+        const fmt = (d) => new Date(d).toLocaleDateString('en-IN');
+        grievance.timelineStages.push({
+            stageName: 'Investigation',
+            date: new Date(startDate),
+            description: `Work planned from ${fmt(startDate)} to ${fmt(endDate)}`
+        });
+        for (const m of milestones.filter((m) => m && m.description && m.date)) {
+            grievance.timelineStages.push({
+                stageName: 'Investigation',
+                date: new Date(m.date),
+                description: String(m.description).slice(0, 500)
+            });
+        }
+        await grievance.save();
+
+        await Notification.create({
+            recipient: grievance.petitioner,
+            recipientType: 'Petitioner',
+            type: 'TIMELINE_UPDATE',
+            message: `A work timeline (${fmt(startDate)} - ${fmt(endDate)}) was added to grievance ${grievance.petitionId}.`,
+            grievanceId: grievance._id
+        }).catch((e) => console.warn('Timeline notification failed:', e.message));
+
+        res.json({ message: 'Timeline saved', timelineStages: grievance.timelineStages });
+    } catch (error) {
+        console.error('Error saving work timeline:', error);
+        res.status(500).json({ error: 'Failed to save timeline', details: error.message });
+    }
+};
+
+// Assign a grievance to another official of the same department
+export const assignGrievance = async (req, res) => {
+    try {
+        const { assignedTo } = req.body;
+        if (!assignedTo || !mongoose.Types.ObjectId.isValid(assignedTo)) {
+            return res.status(400).json({ error: 'Select an official to assign' });
+        }
+        const grievance = await findGrievanceByAnyId(req.params.id);
+        if (!grievance) return res.status(404).json({ error: 'Grievance not found' });
+
+        const official = await Official.findById(assignedTo);
+        if (!official || official.department !== grievance.department) {
+            return res.status(400).json({ error: 'Official must belong to the grievance department' });
+        }
+
+        grievance.assignedTo = official._id;
+        if (!grievance.assignedOfficials.some((o) => String(o) === String(official._id))) {
+            grievance.assignedOfficials.push(official._id);
+        }
+        if (grievance.status === 'pending') grievance.status = 'assigned';
+        grievance.statusHistory.push({
+            status: grievance.status,
+            updatedBy: req.user.id,
+            updatedByType: req.user.role === 'admin' ? 'admin' : 'official',
+            comment: `Assigned to ${official.firstName} ${official.lastName}`
+        });
+        grievance.timelineStages.push({
+            stageName: 'Reassigned',
+            date: new Date(),
+            description: `Assigned to ${official.firstName} ${official.lastName} (${official.designation || official.department})`
+        });
+        await grievance.save();
+
+        await Notification.create({
+            recipient: official._id,
+            recipientType: 'Official',
+            type: 'REASSIGNMENT',
+            message: `Grievance ${grievance.petitionId} "${grievance.title}" was assigned to you.`,
+            grievanceId: grievance._id
+        }).catch((e) => console.warn('Assignment notification failed:', e.message));
+
+        res.json({ message: 'Grievance assigned', grievance });
+    } catch (error) {
+        console.error('Error assigning grievance:', error);
+        res.status(500).json({ error: 'Failed to assign grievance', details: error.message });
+    }
+};
+
+// Officials of the caller's department (for the assign dropdown)
+export const listDepartmentOfficials = async (req, res) => {
+    try {
+        const filter = req.user.department ? { department: req.user.department } : {};
+        const officials = await Official.find(filter).select('firstName lastName designation taluk department').lean();
+        res.json(
+            officials.map((o) => ({
+                _id: o._id,
+                name: `${o.firstName} ${o.lastName}${o.taluk ? ` (${o.taluk})` : ''}`,
+                designation: o.designation,
+                department: o.department
+            }))
+        );
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch officials', details: error.message });
+    }
+};

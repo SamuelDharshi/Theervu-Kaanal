@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import Admin from '../models/Admin.js';
 import { generateToken } from '../middleware/auth.js';
 import { getResourceManagementData } from '../controllers/authController.js';
-import { auth } from '../middleware/auth.js';
+import { auth, requireRole } from '../middleware/auth.js';
 import Official from '../models/Official.js';
 import Grievance from '../models/Grievance.js';
 import Petitioner from '../models/Petitioner.js';
@@ -109,7 +109,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Get resource management data from all departments
-router.get('/resource-management', auth, async (req, res) => {
+router.get('/resource-management', auth, requireRole('admin'), async (req, res) => {
     try {
         // Call the controller directly
         await getResourceManagementData(req, res);
@@ -120,10 +120,11 @@ router.get('/resource-management', auth, async (req, res) => {
 });
 
 // Get all officials
-router.get('/officials', auth, async (req, res) => {
+router.get('/officials', auth, requireRole('admin'), async (req, res) => {
     try {
-        const officials = await Official.find()
-            .select('firstName lastName department email');
+        const filter = req.query.department ? { department: req.query.department } : {};
+        const officials = await Official.find(filter)
+            .select('firstName lastName department email designation taluk district division');
         res.json({ officials });
     } catch (error) {
         console.error('Error fetching officials:', error);
@@ -132,7 +133,7 @@ router.get('/officials', auth, async (req, res) => {
 });
 
 // Get department statistics
-router.get('/department-stats', auth, async (req, res) => {
+router.get('/department-stats', auth, requireRole('admin'), async (req, res) => {
     try {
         const departments = ['Water', 'RTO', 'Electricity'];
         const departmentStats = [];
@@ -155,7 +156,7 @@ router.get('/department-stats', auth, async (req, res) => {
 });
 
 // Get monthly statistics
-router.get('/monthly-stats', auth, async (req, res) => {
+router.get('/monthly-stats', auth, requireRole('admin'), async (req, res) => {
     try {
         const monthlyStats = [];
         const currentDate = new Date();
@@ -190,7 +191,7 @@ router.get('/monthly-stats', auth, async (req, res) => {
 });
 
 // Get quick statistics
-router.get('/quick-stats', auth, async (req, res) => {
+router.get('/quick-stats', auth, requireRole('admin'), async (req, res) => {
     try {
         const totalCases = await Grievance.countDocuments();
         const activeCases = await Grievance.countDocuments({

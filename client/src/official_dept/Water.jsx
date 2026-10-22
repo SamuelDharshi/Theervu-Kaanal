@@ -10,6 +10,7 @@ import "../styles/Chat.css";
 import NotificationBell from '../components/NotificationBell';
 import { Dropdown } from 'react-bootstrap';
 import RepeatedCaseIndicator from '../components/RepeatedCaseIndicator';
+import { API_BASE } from '../config';
 
 const WaterDashboard = () => {
   const navigate = useNavigate();
@@ -161,7 +162,7 @@ const WaterDashboard = () => {
       }
 
       const response = await fetch(
-        `https://theervu-kaanal.onrender.com/api/grievances/department/Water/${activeTab}${priorityFilter ? `?priority=${priorityFilter}` : ''}`,
+        `${API_BASE}/api/grievances/department/Water/${activeTab}${priorityFilter ? `?priority=${priorityFilter}` : ''}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -184,7 +185,7 @@ const WaterDashboard = () => {
       const processedGrievances = await Promise.all(data.grievances.map(async (grievance) => {
         try {
           // Call Gemini AI for priority analysis
-          const priorityResponse = await fetch('https://theervu-kaanal.onrender.com/api/grievances/analyze-priority', {
+          const priorityResponse = await fetch(`${API_BASE}/api/grievances/analyze-priority`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -267,7 +268,7 @@ const WaterDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievance._id}/accept`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievance._id}/accept`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -293,7 +294,7 @@ const WaterDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/resource-management`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/resource-management`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -322,7 +323,7 @@ const WaterDashboard = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/timeline-stage`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/timeline-stage`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -349,7 +350,7 @@ const WaterDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/start-progress`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/start-progress`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -390,7 +391,7 @@ const WaterDashboard = () => {
           formData.append('document', file);
 
           // First upload the document
-          const uploadResponse = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/upload-resolution`, {
+          const uploadResponse = await fetch(`${API_BASE}/api/grievances/${grievanceId}/upload-resolution`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -404,7 +405,7 @@ const WaterDashboard = () => {
           }
 
           // After successful upload, resolve the grievance
-          const resolveResponse = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievanceId}/resolve`, {
+          const resolveResponse = await fetch(`${API_BASE}/api/grievances/${grievanceId}/resolve`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -452,7 +453,7 @@ const WaterDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievance._id}/decline`, {
+      const response = await fetch(`${API_BASE}/api/grievances/${grievance._id}/decline`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -526,7 +527,7 @@ const WaterDashboard = () => {
                   <div className="mb-3">
                     <h5 className="font-medium">Original Document:</h5>
                     <a
-                      href={`https://theervu-kaanal.onrender.com/uploads/documents/${selectedGrievance.originalDocument.path.split(/[\/\\]/).pop()}`}
+                      href={`${API_BASE}/uploads/documents/${selectedGrievance.originalDocument.path.split(/[\/\\]/).pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center mt-2 px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"
@@ -551,7 +552,7 @@ const WaterDashboard = () => {
                       {selectedGrievance.attachments.map((attachment, index) => (
                         <a
                           key={index}
-                          href={`https://theervu-kaanal.onrender.com/uploads/documents/${attachment.path.split(/[\/\\]/).pop()}`}
+                          href={`${API_BASE}/uploads/documents/${attachment.path.split(/[\/\\]/).pop()}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"

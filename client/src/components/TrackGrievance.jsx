@@ -3,6 +3,7 @@ import { Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Clock, User, Building, FileText, AlertCircle } from 'lucide-react';
 import moment from 'moment';
 import TimelineView from './TimelineView';
+import { API_BASE } from '../config';
 
 const TrackGrievance = () => {
     const [grievanceId, setGrievanceId] = useState('');
@@ -22,7 +23,7 @@ const TrackGrievance = () => {
         setError(null);
 
         try {
-            const response = await fetch(`https://theervu-kaanal.onrender.com/api/grievances/track/${grievanceId}`);
+            const response = await fetch(`${API_BASE}/api/grievances/track/${grievanceId}`);
             const data = await response.json();
 
             if (response.ok) {

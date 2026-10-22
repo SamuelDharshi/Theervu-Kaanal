@@ -3,6 +3,7 @@ import { useNavigate, Link, Link as RouterLink } from 'react-router-dom';
 import Footer from '../shared/Footer';
 import NavBar from '../components/NavBar';
 import { Shield, ArrowLeft } from 'lucide-react';
+import { API_BASE } from '../config';
 
 const AdminRegistration = () => {
   const navigate = useNavigate();
@@ -93,7 +94,7 @@ const AdminRegistration = () => {
 
     if (validateForm()) {
       try {
-        const response = await fetch('https://theervu-kaanal.onrender.com/api/admin/register', {  // Use your actual backend URL
+        const response = await fetch(`${API_BASE}/api/admin/register`, {  // Use your actual backend URL
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

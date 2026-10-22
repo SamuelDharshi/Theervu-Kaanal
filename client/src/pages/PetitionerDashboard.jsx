@@ -11,6 +11,7 @@ import "../styles/Chat.css";
 import { Modal, Form, Button } from "react-bootstrap";
 import { toast } from "react-hot-toast";
 import EscalateModal from '../components/EscalateModal';
+import { API_BASE } from '../config';
 
 const PetitionerDashboard = () => {
     const navigate = useNavigate();
@@ -77,7 +78,7 @@ const PetitionerDashboard = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await authenticatedFetch(`https://theervu-kaanal.onrender.com/api/grievances/user/${user.id}`);
+            const response = await authenticatedFetch(`${API_BASE}/api/grievances/user/${user.id}`);
             const data = await response.json();
 
             if (response.ok) {
@@ -158,7 +159,7 @@ const PetitionerDashboard = () => {
 
     const handleEscalateSubmit = async (reason) => {
         try {
-            const response = await authenticatedFetch(`https://theervu-kaanal.onrender.com/api/grievances/${selectedGrievanceForEscalation._id}/escalate`, {
+            const response = await authenticatedFetch(`${API_BASE}/api/grievances/${selectedGrievanceForEscalation._id}/escalate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -184,7 +185,7 @@ const PetitionerDashboard = () => {
     const handleGiveFeedback = async (grievance) => {
         try {
             // First, get the latest grievance data to make sure we have current feedback status
-            const response = await authenticatedFetch(`https://theervu-kaanal.onrender.com/api/grievances/${grievance._id}/status`);
+            const response = await authenticatedFetch(`${API_BASE}/api/grievances/${grievance._id}/status`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch grievance details');
@@ -227,7 +228,7 @@ const PetitionerDashboard = () => {
                 return;
             }
 
-            const response = await authenticatedFetch(`https://theervu-kaanal.onrender.com/api/grievances/${selectedGrievanceForFeedback._id}/feedback`, {
+            const response = await authenticatedFetch(`${API_BASE}/api/grievances/${selectedGrievanceForFeedback._id}/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -599,7 +600,7 @@ const PetitionerDashboard = () => {
                                     {selectedGrievance.resolutionDocument ? (
                                         <div className="text-center">
                                             <a
-                                                href={`https://theervu-kaanal.onrender.com/uploads/resolution-docs/${selectedGrievance.resolutionDocument.path.split(/[\/\\]/).pop()}`}
+                                                href={`${API_BASE}/uploads/resolution-docs/${selectedGrievance.resolutionDocument.path.split(/[\/\\]/).pop()}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="btn btn-primary"
