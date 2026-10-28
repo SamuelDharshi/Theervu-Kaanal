@@ -89,6 +89,7 @@ const NavBar = ({ overlay = false }) => {
   };
 
   const links = [
+    { to: '/#engine', label: 'Escalation engine' },
     { to: '/#journey', label: 'How it works' },
     { to: '/#track', label: 'Track a petition' },
     { to: '/about', label: 'About' },

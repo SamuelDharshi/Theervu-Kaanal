@@ -60,31 +60,6 @@ export const AuthProvider = ({ children }) => {
         return timeUntilExpiry < 5 * 60 * 1000; // 5 minutes
     };
 
-    const checkTokenExpiration = () => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const decoded = decodeToken(token);
-        if (!decoded) {
-            logout();
-            return;
-        }
-
-        const expiryTime = decoded.exp * 1000;
-        const now = Date.now();
-
-        if (now >= expiryTime) {
-            logout();
-            return;
-        }
-
-        if (isTokenExpiringSoon(decoded)) {
-            setTokenExpiryWarning(true);
-        } else {
-            setTokenExpiryWarning(false);
-        }
-    };
-
     useEffect(() => {
         // Check active session
         const initializeAuth = async () => {

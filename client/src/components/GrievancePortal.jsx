@@ -8,6 +8,7 @@ import ThreadScene, { DEPARTMENTS, STAGES } from '../landing/ThreadScene';
 import TrackPanel from '../landing/TrackPanel';
 import SmartQueryDemo from '../landing/SmartQueryDemo';
 import EscalationClock from '../landing/EscalationClock';
+import EngineSection from '../landing/EngineSection';
 import { gsap, ScrollTrigger, prefersReducedMotion, scrollToTarget, startSmoothScroll } from '../motion/smoothScroll';
 import '../styles/Landing.css';
 
@@ -23,7 +24,7 @@ const JOURNEY = [
     key: 'review',
     stage: 'Under Review',
     title: 'Priority is read, not guessed.',
-    body: 'Gemini reads each petition and ranks it High, Medium or Low. Without a key, offline rules do the same: urgent words like “accident” or “no water” raise it. The official accepts or declines.',
+    body: 'Each petition is ranked High, Medium or Low from what it says: Gemini when a key is set, department keyword rules otherwise. The rank sets the escalation engine’s clock. The official accepts or declines.',
     fact: 'Line weight in the field is priority',
   },
   {
@@ -37,7 +38,7 @@ const JOURNEY = [
     key: 'escalated',
     stage: 'Escalated',
     title: 'Stalls are caught at noon.',
-    body: 'High priority not resolved in 48 hours, or pending for 7 days, escalates on its own. Every day at noon the server checks. The petitioner can also escalate with a reason; it lands with the grievance cell.',
+    body: 'Every day at noon the escalation engine checks each open petition against three rules: High priority open 48 hours, untouched for 7 days, or a work plan gone silent past halfway. A flagged petition goes to the grievance cell.',
     fact: 'Red lines are escalations',
     accent: true,
   },
@@ -48,12 +49,6 @@ const JOURNEY = [
     body: 'The official resolves the case with a resolution document and a note attached. The petitioner rates it and leaves feedback, or escalates if the fix did not hold.',
     fact: 'Every action logged on the timeline',
   },
-];
-
-const RULES = [
-  { figure: '48 h', caption: 'A High priority petition that is still open escalates.' },
-  { figure: '7 days', caption: 'Pending or assigned for a week escalates.' },
-  { figure: '12:00', caption: 'The check runs every day at noon.' },
 ];
 
 const ROLES = [
@@ -73,7 +68,7 @@ const FAQ = [
   },
   {
     q: 'What happens if nobody acts on it?',
-    a: 'High priority petitions not resolved in 48 hours, and petitions pending or assigned for 7 days, are flagged for escalation by a check that runs every day at noon. They land with the grievance cell head.',
+    a: 'The escalation engine flags it. High priority petitions open for 48 hours, petitions pending or assigned for 7 days, and work plans past halfway with no milestone are caught by a check every day at noon. The grievance cell is told, and you can escalate with your reason.',
   },
   {
     q: 'What if I am not satisfied with the resolution?',
@@ -225,12 +220,13 @@ const GrievancePortal = () => {
         scrollTrigger: { trigger: '.lp-cta', start: 'top bottom', end: 'top top', scrub: true },
       });
 
-      // Rule tiles step up into place.
-      gsap.utils.toArray('.lp-rules__tile').forEach((tile, i) => {
+
+      // The engine's three rule tiles step up into place (side by side only; stacked on a phone).
+      gsap.utils.toArray(window.innerWidth >= 640 ? '.lp-eng__rules li' : []).forEach((tile, i) => {
         gsap.from(tile, {
-          yPercent: 18 + i * 10,
+          yPercent: 8 + i * 8,
           ease: 'none',
-          scrollTrigger: { trigger: '.lp-rules', start: 'top bottom', end: 'center center', scrub: true },
+          scrollTrigger: { trigger: '.lp-eng__rules', start: 'top bottom', end: 'center center', scrub: true },
         });
       });
     });
@@ -279,7 +275,7 @@ const GrievancePortal = () => {
             </h1>
             <p className="lp-hero__lede">
               Most grievance portals stop at filing. Theervu-Kaanal routes each petition to the right
-              official, keeps it in public view, and escalates it on its own when it stalls.
+              official, keeps it in public view, and its escalation engine flags it the day it stalls.
             </p>
             <div className="lp-hero__actions">
               <button type="button" className="btn btn-primary btn-lg lp-btn" onClick={handleSubmitGrievance}>
@@ -292,7 +288,7 @@ const GrievancePortal = () => {
           </div>
           <p className="lp-hero__note">
             Each line is one petition for Water, RTO or Electricity in Tamil Nadu.
-            Line weight is priority, set by Gemini.
+            Red lines are the ones the escalation engine caught.
           </p>
           <button type="button" className="lp-hero__scroll" onClick={() => scrollToTarget('#journey')}>
             Follow a petition <span aria-hidden="true">↓</span>
@@ -321,6 +317,8 @@ const GrievancePortal = () => {
           </article>
         </section>
       </div>
+
+      <EngineSection />
 
       <section className="lp-track" id="track" aria-labelledby="track-title">
         <TrackPanel />
@@ -378,18 +376,6 @@ const GrievancePortal = () => {
           </p>
         </div>
         <SmartQueryDemo />
-      </section>
-
-      <section className="lp-rules" aria-labelledby="rules-title">
-        <div className="lp-rules__grid">
-          {RULES.map((r, i) => (
-            <div key={r.figure} className={`lp-rules__tile lp-rules__tile--${i}`}>
-              <p className="lp-rules__fig">{r.figure}</p>
-              <p className="lp-rules__cap">{r.caption}</p>
-            </div>
-          ))}
-          <h2 id="rules-title" className="lp-rules__head" data-reveal>The rules are fixed. Nobody has to remember them.</h2>
-        </div>
       </section>
 
       <section className="lp-roles" aria-labelledby="roles-title">

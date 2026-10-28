@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WaterBoard.css";
-import NavBar_Departments from "../components/NavBar_Departments";
 import { useAuth } from "../context/AuthContext";
-import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaPlay, FaCheckCircle, FaClock, FaClipboardList, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
+import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaCheckCircle, FaClock, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import ChatComponent from '../components/ChatComponent';
 import "../styles/Chat.css";
@@ -15,7 +14,6 @@ import { API_BASE } from '../config';
 const RtoDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [employeeId, setEmployeeId] = useState("");
   const [email, setEmail] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,12 +91,12 @@ const RtoDashboard = () => {
     }
 
     // Set user info
-    setEmployeeId(user.id);
     setEmail(user.email);
 
     // Fetch initial data
     fetchGrievances();
     fetchAssignedOfficers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchGrievances reads activeTab/priorityFilter from this render
   }, [user, activeTab, priorityFilter]);
 
   const analyzePriorityLocally = (grievance) => {
@@ -321,34 +319,6 @@ const RtoDashboard = () => {
     }
   };
 
-  const handleStartProgress = async (grievanceId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/start-progress`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ comment: 'Started working on the grievance' })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start progress');
-      }
-
-      toast.success('Progress started successfully');
-      fetchGrievances();
-    } catch (error) {
-      console.error('Error starting progress:', error);
-      toast.error('Failed to start progress');
-    }
-  };
-
   const handleResolveGrievance = async (grievanceId) => {
     try {
       const token = localStorage.getItem('token');
@@ -439,9 +409,6 @@ const RtoDashboard = () => {
 
       setShowResourceModal(false);
       toast.success('Resource management details submitted successfully');
-
-      // Automatically start progress after resource management submission
-      await handleStartProgress(grievanceId);
 
       fetchGrievances();
     } catch (error) {
@@ -619,6 +586,12 @@ const RtoDashboard = () => {
       </div>
     );
   };
+
+  const filteredGrievances = grievances[activeTab].filter(grievance =>
+    (grievance?.petitionId?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (grievance?.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (grievance?.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  );
 
   const renderGrievanceCard = (grievance) => {
     return (
@@ -887,16 +860,54 @@ const RtoDashboard = () => {
             </div>
 
             <div className="grievances-container">
-              {grievances[activeTab].length === 0 ? (
+              {loading ? (
+                <div className="loading">Loading...</div>
+              ) : error ? (
+                <div className="error">{error}</div>
+              ) : filteredGrievances.length === 0 ? (
                 <div className="no-grievances">
                   <h4>No grievances found</h4>
                 </div>
               ) : (
-                grievances[activeTab].map(renderGrievanceCard)
+                filteredGrievances.map(renderGrievanceCard)
               )}
             </div>
           </main>
         </div>
+
+        {showDeclineModal && selectedGrievance && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>Decline Grievance</h3>
+              <p>Please provide a reason for declining this grievance:</p>
+              <textarea
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                className="form-control mb-3"
+                rows="4"
+                placeholder="Enter reason for declining..."
+              />
+              <div className="modal-actions">
+                <button
+                  onClick={() => {
+                    setShowDeclineModal(false);
+                    setDeclineReason('');
+                  }}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeclineGrievance(selectedGrievance._id)}
+                  className="btn btn-danger"
+                  disabled={!declineReason.trim()}
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showResourceModal && selectedGrievance && (
           <div className="modal">

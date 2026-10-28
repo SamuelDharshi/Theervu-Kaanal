@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { API_BASE } from '../config';
+import { describeVerdict } from '../engine/format';
 
 // Seeded demo petitions (server/config/seed.js), so the panel works on a fresh install.
 const EXAMPLES = [
@@ -78,6 +79,7 @@ export default function TrackPanel() {
 
   const g = state.grievance;
   const escalated = g && (g.status === 'escalated' || g.escalationStatus === 'Escalated' || g.isEscalated);
+  const verdict = g && describeVerdict(g.engine, { escalationStatus: g.escalationStatus });
 
   return (
     <div className="lp-trackp">
@@ -144,6 +146,14 @@ export default function TrackPanel() {
               <div><dt>Filed</dt><dd>{fmt(g.createdAt)}</dd></div>
               <div><dt>Last update</dt><dd>{fmt(g.updatedAt)}</dd></div>
             </dl>
+
+            {verdict && (
+              <div className={`lp-trackp__engine lp-trackp__engine--${verdict.tone}`}>
+                <p className="lp-trackp__engine-label">Escalation engine</p>
+                <p className="lp-trackp__engine-head">{verdict.headline}</p>
+                <p className="lp-trackp__engine-detail">{verdict.detail}</p>
+              </div>
+            )}
 
             {state.stages.length > 0 && (
               <ol className="lp-trackp__stages">

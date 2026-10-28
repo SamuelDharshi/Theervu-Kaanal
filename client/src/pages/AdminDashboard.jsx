@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Footer from "../shared/Footer";
 import NavBar from "../components/NavBar";
 import AdminSidebar from '../components/AdminSidebar';
 import SmartQueryChatbot from '../components/SmartQueryChatbot';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from "recharts";
 import { Container, Row, Col, Card, Button, Table, Modal, Form } from "react-bootstrap";
-import { Bell, User, ChevronDown, Plus, MessageSquare, List, X, Database, AlertTriangle } from "lucide-react";
-import { Link } from "react-router-dom";
-import { API_URL } from '../config';
+import { Bell, AlertTriangle } from "lucide-react";
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import { span } from '../engine/format';
 
 const AdminDashboard = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [resourceData, setResourceData] = useState([]);
     const [resourceLoading, setResourceLoading] = useState(true);
     const [resourceError, setResourceError] = useState(null);
@@ -28,6 +25,7 @@ const AdminDashboard = () => {
         return 'dashboard';
     });
     const [escalatedGrievances, setEscalatedGrievances] = useState([]);
+    const [flaggedGrievances, setFlaggedGrievances] = useState([]);
     const [showResponseModal, setShowResponseModal] = useState(false);
     const [selectedGrievance, setSelectedGrievance] = useState(null);
     const [escalationResponse, setEscalationResponse] = useState('');
@@ -75,7 +73,10 @@ const AdminDashboard = () => {
         } else if (activeTab === 'escalated') {
             fetchEscalatedGrievances();
             fetchOfficials();
+        } else if (activeTab === 'resource') {
+            fetchResourceData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- load each tab's data when it is opened
     }, [activeTab]);
 
     const fetchResourceData = async () => {
@@ -103,8 +104,12 @@ const AdminDashboard = () => {
             setEscalatedLoading(true);
             setEscalatedError(null);
 
-            const response = await api.get('/grievances/escalated');
-            setEscalatedGrievances(response.data.grievances);
+            const [escalated, flagged] = await Promise.all([
+                api.get('/grievances/escalated'),
+                api.get('/grievances/engine-flagged')
+            ]);
+            setEscalatedGrievances(escalated.data.grievances);
+            setFlaggedGrievances(flagged.data.grievances || []);
         } catch (error) {
             console.error('Error fetching escalated grievances:', error);
             setEscalatedError(error.message);
@@ -425,6 +430,68 @@ const AdminDashboard = () => {
                 );
             case 'escalated':
                 return (
+                    <>
+                    <Card className="shadow-sm mb-4 tk-flagged-queue">
+                        <Card.Header>
+                            <h6 className="mb-0">Flagged by the escalation engine</h6>
+                        </Card.Header>
+                        <Card.Body>
+                            <p className="mb-3">
+                                Open grievances that one of the engine’s three rules has caught and the petitioner has not escalated yet.
+                                Respond or reassign now instead of waiting for the escalation.
+                            </p>
+                            {escalatedLoading ? (
+                                <div className="text-center py-3">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            ) : flaggedGrievances.length === 0 ? (
+                                <p className="text-muted mb-0">Nothing flagged. Every open grievance is inside its window.</p>
+                            ) : (
+                                <Table responsive>
+                                    <thead>
+                                        <tr>
+                                            <th>Grievance ID</th>
+                                            <th>Title</th>
+                                            <th>Department</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                            <th>Open for</th>
+                                            <th>Why the engine flagged it</th>
+                                            <th>Assigned Official</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {flaggedGrievances.map((grievance) => (
+                                            <tr key={grievance._id}>
+                                                <td>{grievance.petitionId}</td>
+                                                <td>{grievance.title}</td>
+                                                <td>{grievance.department}</td>
+                                                <td>
+                                                    <span className={`badge bg-${getPriorityBadgeClass(grievance.priority)}`}>{grievance.priority}</span>
+                                                </td>
+                                                <td>{grievance.status}</td>
+                                                <td>{span(Date.now() - new Date(grievance.createdAt).getTime())}</td>
+                                                <td className="tk-flagged-queue__why">{grievance.engine.reasons.join('. ')}</td>
+                                                <td>
+                                                    {grievance.assignedTo
+                                                        ? `${grievance.assignedTo.firstName || ''} ${grievance.assignedTo.lastName || ''}`.trim()
+                                                        : 'Unassigned'}
+                                                </td>
+                                                <td>
+                                                    <Button variant="danger" size="sm" onClick={() => handleOpenResponseModal(grievance)}>
+                                                        Act on it
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            )}
+                        </Card.Body>
+                    </Card>
                     <Card className="shadow-sm">
                         <Card.Header className="d-flex justify-content-between align-items-center">
                             <h6 className="mb-0">Escalated Grievances</h6>
@@ -539,6 +606,7 @@ const AdminDashboard = () => {
                             )}
                         </Card.Body>
                     </Card>
+                    </>
                 );
             case 'resource':
                 return (
@@ -665,7 +733,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <div className="mb-2">
                                     <strong>Escalation Reason:</strong>
-                                    <p className="text-muted mb-0">{selectedGrievance.escalationReason}</p>
+                                    <p className="text-muted mb-0">{selectedGrievance.escalationReason || selectedGrievance.engine?.reason}</p>
                                 </div>
                             </div>
 

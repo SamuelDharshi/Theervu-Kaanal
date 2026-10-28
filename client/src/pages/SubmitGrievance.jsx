@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/NavBar';
 import Footer from '../shared/Footer';
-import { Upload, FileText, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Upload, FileText, Mic, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LocationDropdowns from '../components/LocationDropdowns';
 
@@ -24,7 +24,6 @@ const SubmitGrievance = () => {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
-    const [submitSuccess, setSubmitSuccess] = useState(false);
     const recognitionRef = useRef(null);
     const [isListening, setIsListening] = useState(false);
     const [recognitionActive, setRecognitionActive] = useState(false);
@@ -181,7 +180,6 @@ const SubmitGrievance = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitError('');
-        setSubmitSuccess(false);
 
         if (!validateForm()) {
             return;
@@ -240,7 +238,6 @@ const SubmitGrievance = () => {
             console.log('Server response:', data);
 
             if (data.message === 'Grievance created successfully' || data.message === 'Document processed successfully') {
-                setSubmitSuccess(true);
                 setFormData({
                     title: '',
                     department: '',

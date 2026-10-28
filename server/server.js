@@ -20,6 +20,7 @@ import cron from 'node-cron';
 import { checkEligibleEscalations, listDepartmentOfficials } from './controllers/grievanceController.js';
 import auth from './middleware/auth.js';
 import smartQueryRouter from './routes/smartQuery.js';
+import engineRoutes from './routes/engine.js';
 import usersRoutes from './routes/users.js';
 
 // Get the directory name of the current module
@@ -124,6 +125,7 @@ app.use('/api/grievances', grievanceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/smart-query', smartQueryRouter);
+app.use('/api/engine', engineRoutes);
 app.use('/api/users', usersRoutes);
 app.get('/api/officers', auth, listDepartmentOfficials);
 
@@ -153,4 +155,4 @@ io.on('connection', (socket) => {
 });
 
 // Server Listening
-httpServer.listen(process.env.PORT || 5000, () => console.log(`✅ Server running on port ${process.env.PORT || 5000}`));
+httpServer.listen(process.env.PORT || 5001, () => console.log(`✅ Server running on port ${process.env.PORT || 5001}`));

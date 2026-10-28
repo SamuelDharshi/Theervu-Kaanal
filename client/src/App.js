@@ -17,7 +17,6 @@ import OfficialLogin from "./pages/OfficialLogin";
 import PetitionerLogin from "./pages/PetitionerLogin";
 import PetitionerDashboard from "./pages/PetitionerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import ResourceManagement from "./pages/ResourceManagement";
 import OfficialDashboard from "./pages/OfficialDashboard";
 import WaterDashboard from "./official_dept/Water";
 import RTODashboard from "./official_dept/Rto";

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Badge, Modal } from 'react-bootstrap';
-import { findSimilarGrievances, calculateTextSimilarity } from '../utils/semanticSimilarity';
+import { calculateTextSimilarity } from '../utils/semanticSimilarity';
 
 const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
   const [showModal, setShowModal] = useState(false);

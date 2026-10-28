@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { getRedirectPath } from "../utils/authUtils";
 
 const OfficialLogin = () => {
-    const navigate = useNavigate();
     const { login } = useAuth();
     const [formData, setFormData] = useState({
         employeeId: "",

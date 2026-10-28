@@ -7,6 +7,7 @@ import { mapCategoryToDepartment } from '../utils/departmentMapper.js';
 import Admin from '../models/Admin.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createNotification } from './notificationController.js';
+import { evaluateEscalation, withEngine } from '../utils/escalationEngine.js';
 
 // Update resource management
 export const updateResourceManagement = async (req, res) => {
@@ -853,9 +854,10 @@ export const getUserGrievances = async (req, res) => {
 
         console.log('Found grievances:', grievances.length);
 
+        const now = new Date();
         res.json({
             success: true,
-            grievances
+            grievances: grievances.map((g) => withEngine(g, now))
         });
     } catch (error) {
         console.error('Error fetching user grievances:', error);
@@ -1547,8 +1549,9 @@ export const getEscalatedGrievances = async (req, res) => {
             .populate('assignedTo', 'firstName lastName email')
             .sort({ escalatedAt: -1 });
 
+        const now = new Date();
         res.status(200).json({
-            grievances: escalatedGrievances
+            grievances: escalatedGrievances.map((g) => withEngine(g, now))
         });
     } catch (error) {
         console.error('Error getting escalated grievances:', error);
@@ -1559,165 +1562,64 @@ export const getEscalatedGrievances = async (req, res) => {
     }
 };
 
-// Check for eligible escalations (cron job)
+// Daily check: run every open grievance through the escalation engine, flag the
+// ones a rule has caught and notify the grievance cell once per grievance.
 export const checkEligibleEscalations = async () => {
     try {
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
-
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        console.log('Starting escalation check...');
-
-        // Get all unresolved and non-escalated grievances
-        const allGrievances = await Grievance.find({
+        const now = new Date();
+        const candidates = await Grievance.find({
             isEscalated: false,
+            escalationEligible: { $ne: true },
             status: { $ne: 'resolved' }
-        }).populate('assignedTo').lean();
+        }).lean();
 
-        console.log(`Found ${allGrievances.length} unresolved grievances to check`);
+        const flagged = candidates
+            .map((grievance) => ({ grievance, verdict: evaluateEscalation(grievance, now) }))
+            .filter(({ verdict }) => verdict.eligible);
 
-        // Filter grievances that need escalation
-        const eligibleGrievances = allGrievances.filter(grievance => {
-            // 1. High priority cases not resolved within 48 hours
-            if (grievance.priority === 'High' &&
-                new Date(grievance.createdAt) < twoDaysAgo) {
-                console.log(`Grievance ${grievance._id} eligible: High priority not resolved within 48 hours`);
-                return true;
-            }
+        console.log(`Escalation engine: ${flagged.length} of ${candidates.length} open grievances flagged`);
 
-            // 2. Stuck in pending or assigned status for more than 7 days
-            if (['pending', 'assigned'].includes(grievance.status) &&
-                new Date(grievance.createdAt) < sevenDaysAgo) {
-                console.log(`Grievance ${grievance._id} eligible: Stuck in ${grievance.status} status for over 7 days`);
-                return true;
-            }
-
-            // 3. In-progress with no milestone updates after 50% timeline
-            if (grievance.status === 'in-progress' &&
-                grievance.resourceManagement &&
-                grievance.resourceManagement.startDate &&
-                grievance.resourceManagement.endDate) {
-
-                const startDate = new Date(grievance.resourceManagement.startDate);
-                const endDate = new Date(grievance.resourceManagement.endDate);
-                const now = new Date();
-
-                // Calculate timeline progress
-                const totalDuration = endDate.getTime() - startDate.getTime();
-                const elapsedTime = now.getTime() - startDate.getTime();
-                const progressPercentage = (elapsedTime / totalDuration) * 100;
-
-                // If we're past 50% of the timeline
-                if (progressPercentage >= 50) {
-                    const midPoint = new Date(startDate.getTime() + totalDuration / 2);
-
-                    // Get the latest milestone update after the start date
-                    const latestUpdate = grievance.timelineStages && grievance.timelineStages.length > 0 ?
-                        grievance.timelineStages
-                            .filter(stage => new Date(stage.date) > startDate)
-                            .sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-                        : null;
-
-                    // Check if no updates after midpoint
-                    if (!latestUpdate || new Date(latestUpdate.date) < midPoint) {
-                        console.log(`Grievance ${grievance._id} eligible: No milestone updates after 50% timeline (${progressPercentage.toFixed(1)}% elapsed)`);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        });
-
-        console.log(`Found ${eligibleGrievances.length} grievances eligible for escalation`);
-
-        // Find all admin users
         const admins = await Admin.find({});
-
-        // Mark eligible grievances and notify admins
-        for (const grievance of eligibleGrievances) {
-            const escalationReason = determineEscalationReason(grievance, twoDaysAgo, sevenDaysAgo);
-
-            // Update grievance
+        for (const { grievance, verdict } of flagged) {
             await Grievance.findByIdAndUpdate(grievance._id, {
-                $set: {
-                    escalationEligible: true,
-                    escalationReason,
-                    updatedAt: new Date()
-                }
+                $set: { escalationEligible: true, escalationReason: verdict.reason, updatedAt: now }
             });
-
-            // Notify all admins
             for (const admin of admins) {
                 await createNotification(
                     admin._id,
                     'Admin',
                     'ESCALATION',
-                    `A case has been automatically escalated due to: ${escalationReason}. Grievance ID: ${grievance._id}`,
+                    `Grievance ${grievance.petitionId} was flagged by the escalation engine: ${verdict.reason}`,
                     grievance._id
                 );
             }
-
-            console.log('Marked grievance for escalation:', {
-                grievanceId: grievance._id,
-                reason: escalationReason
-            });
         }
 
-        return eligibleGrievances.length;
+        return flagged.length;
     } catch (error) {
         console.error('Error checking for eligible escalations:', error);
         return 0;
     }
 };
 
-// Helper function to determine escalation reason
-function determineEscalationReason(grievance, twoDaysAgo, sevenDaysAgo) {
-    const reasons = [];
-
-    // Check high priority not resolved within 48 hours
-    if (grievance.priority === 'High' && new Date(grievance.createdAt) < twoDaysAgo) {
-        reasons.push('High priority grievance not resolved within 48 hours');
-    }
-
-    // Check stuck in pending or assigned status
-    if (['pending', 'assigned'].includes(grievance.status) &&
-        new Date(grievance.createdAt) < sevenDaysAgo) {
-        reasons.push(`Grievance stuck in ${grievance.status} status for over 7 days`);
-    }
-
-    // Check for missing milestone updates in in-progress state
-    if (grievance.status === 'in-progress' &&
-        grievance.resourceManagement &&
-        grievance.resourceManagement.startDate &&
-        grievance.resourceManagement.endDate) {
-
-        const startDate = new Date(grievance.resourceManagement.startDate);
-        const endDate = new Date(grievance.resourceManagement.endDate);
+// Grievances the engine has caught that nobody has escalated yet (for admin).
+export const getEngineFlaggedGrievances = async (req, res) => {
+    try {
         const now = new Date();
-
-        const totalDuration = endDate.getTime() - startDate.getTime();
-        const elapsedTime = now.getTime() - startDate.getTime();
-        const progressPercentage = (elapsedTime / totalDuration) * 100;
-
-        if (progressPercentage >= 50) {
-            const midPoint = new Date(startDate.getTime() + totalDuration / 2);
-            const latestUpdate = grievance.timelineStages && grievance.timelineStages.length > 0 ?
-                grievance.timelineStages
-                    .filter(stage => new Date(stage.date) > startDate)
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-                : null;
-
-            if (!latestUpdate || new Date(latestUpdate.date) < midPoint) {
-                reasons.push(`No milestone updates after ${progressPercentage.toFixed(1)}% of timeline completion in in-progress state`);
-            }
-        }
+        const open = await Grievance.find({ isEscalated: false, status: { $ne: 'resolved' } })
+            .populate('petitioner', 'firstName lastName email')
+            .populate('assignedTo', 'firstName lastName email')
+            .lean();
+        const grievances = open
+            .map((g) => withEngine(g, now))
+            .filter((g) => g.engine.eligible)
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        res.json({ grievances });
+    } catch (error) {
+        console.error('Error getting engine-flagged grievances:', error);
+        res.status(500).json({ error: 'Failed to get flagged grievances' });
     }
-
-    return reasons.join('; ');
-}
+};
 
 // Analyze priority using Gemini AI
 export const analyzePriorityWithGemini = async (req, res) => {

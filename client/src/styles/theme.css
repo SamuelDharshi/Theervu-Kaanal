@@ -595,6 +595,13 @@ code, kbd, pre, samp { font-family: var(--font-mono); }
 .card:hover { transform: translateY(-2px); }
 .modal .card:hover, .dropdown-menu .card:hover { transform: none; }
 
+/* Lenis's required CSS. Bootstrap sets scroll-behavior: smooth on :root, which makes
+   every per-frame scrollTo from Lenis start a native animation, so the page stalls. */
+html.lenis, html.lenis body { height: auto; }
+html.lenis, .lenis-smooth { scroll-behavior: auto !important; }
+.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -719,3 +726,51 @@ code, kbd, pre, samp { font-family: var(--font-mono); }
 .btn-warning { --bs-btn-disabled-bg: var(--warn); --bs-btn-disabled-border-color: var(--warn); --bs-btn-disabled-color: #fff; }
 .btn-info { --bs-btn-disabled-bg: var(--info); --bs-btn-disabled-border-color: var(--info); --bs-btn-disabled-color: #fff; }
 .btn-secondary, .btn-light { --bs-btn-disabled-bg: var(--paper-2); --bs-btn-disabled-border-color: var(--paper-2); --bs-btn-disabled-color: var(--ink); }
+
+/* ---------- Escalation engine in the dashboards ---------- */
+
+.tk-engine { display: flex; flex-direction: column; gap: 2px; min-width: 9em; }
+.tk-engine strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tk-engine span { font-size: 0.875rem; color: var(--muted); }
+.tk-engine--watching strong { color: var(--ink); }
+.tk-engine--flagged strong,
+.tk-engine--escalated strong { color: var(--accent); }
+.tk-engine--closed strong { color: var(--ok); }
+.tk-engine--clear strong { color: var(--muted); font-weight: 500; }
+
+/* Petitioner: the petitions the engine has flagged, one click from escalating. */
+.tk-flagged {
+  background: var(--accent);
+  color: #fff;
+  padding: 24px 28px;
+}
+
+.tk-flagged h2 { color: inherit; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 6px; }
+.tk-flagged > p { margin: 0 0 18px; max-width: 46em; }
+.tk-flagged ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+
+.tk-flagged li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.tk-flagged li div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tk-flagged li span { font-size: 0.9375rem; color: var(--muted); }
+.tk-flagged .btn { flex: none; }
+
+@media (max-width: 639px) {
+  .tk-flagged { padding: 20px 16px; }
+  .tk-flagged li { flex-direction: column; align-items: stretch; }
+}
+
+/* Admin: the engine's queue sits on the signal colour's tint. */
+.tk-flagged-queue { background: var(--accent-tint); }
+.tk-flagged-queue .card-header { background: var(--accent); color: #fff; }
+.tk-flagged-queue .card-header h6 { color: inherit; }
+.tk-flagged-queue .table { --bs-table-bg: transparent; }
+.tk-flagged-queue__why { min-width: 16em; }

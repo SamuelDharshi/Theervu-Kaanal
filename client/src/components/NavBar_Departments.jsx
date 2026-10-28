@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
-import { Bell, Menu, X } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import shield from '../assets/shield.png';
 
 const NavBar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
-
   return (
     <nav className="navbar navbar-expand-md navbar-dark bg-primary shadow">
       <div className="container">

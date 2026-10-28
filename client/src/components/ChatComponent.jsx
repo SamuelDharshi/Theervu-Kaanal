@@ -30,7 +30,6 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
     const [channel, setChannel] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [connected, setConnected] = useState(false);
     const clientRef = useRef(null);
     const channelIdRef = useRef(null);
     const initializedRef = useRef(false);
@@ -44,12 +43,10 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
             if (clientRef.current && clientRef.current.userID) {
                 console.log('Disconnecting user from chat client');
                 await clientRef.current.disconnectUser();
-                setConnected(false);
                 setChannel(null);
             }
         } catch (err) {
             console.error('Error disconnecting user:', err);
-            setConnected(false);
             // Reset client reference if disconnect failed
             clientRef.current = null;
         }
@@ -90,6 +87,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
         return () => {
             disconnectClient();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- reconnect only when the chat participants change
     }, [grievanceId, petitionerId, officialId]);
 
     const initChat = async () => {
@@ -186,7 +184,6 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
                 tokenData.token
             );
 
-            setConnected(true);
             console.log('Connected user to Stream Chat');
 
             // Create or join channel
@@ -220,7 +217,6 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
         } catch (error) {
             console.error('Error in chat initialization:', error);
             setError(error.message);
-            setConnected(false);
         } finally {
             setLoading(false);
         }

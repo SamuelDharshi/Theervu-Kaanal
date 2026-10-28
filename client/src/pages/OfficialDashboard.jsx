@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Footer from "../shared/Footer";
 import NavBar from "../components/NavBar";
 import { MessageSquare, Phone, User } from "lucide-react";
-import { Container, Row, Col, Card, Button, Dropdown } from "react-bootstrap";
+import { Container, Row, Col, Card, Button } from "react-bootstrap";
 
 const CaseCard = ({ caseData, onDragStart }) => {
     const [isCommenting, setIsCommenting] = useState(false);

@@ -1,6 +1,7 @@
 import Grievance from '../models/Grievance.js';
 import Official from '../models/Official.js';
 import Notification from '../models/Notification.js';
+import { evaluateEscalation } from '../utils/escalationEngine.js';
 import { StreamChat } from 'stream-chat';
 import dotenv from 'dotenv';
 
@@ -39,9 +40,16 @@ export const respondToEscalation = async (req, res) => {
             return res.status(404).json({ error: 'Grievance not found' });
         }
 
-        // Verify that the grievance is actually escalated
+        // The cell can answer a petitioner's escalation, or act first on a case the
+        // escalation engine has flagged; that opens the escalation on the engine's reason.
         if (!grievance.isEscalated) {
-            return res.status(400).json({ error: 'This grievance is not escalated' });
+            const verdict = evaluateEscalation(grievance);
+            if (!grievance.escalationEligible && !verdict.eligible) {
+                return res.status(400).json({ error: 'This grievance is not escalated or flagged by the escalation engine' });
+            }
+            grievance.isEscalated = true;
+            grievance.escalatedAt = new Date();
+            grievance.escalationReason = verdict.reason || grievance.escalationReason;
         }
 
         // Update grievance fields

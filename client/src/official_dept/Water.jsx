@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WaterBoard.css";
-import NavBar_Departments from "../components/NavBar_Departments";
 import { useAuth } from "../context/AuthContext";
-import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaPlay, FaCheckCircle, FaClock, FaClipboardList, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
+import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaCheckCircle, FaClock, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import ChatComponent from '../components/ChatComponent';
 import "../styles/Chat.css";
@@ -15,7 +14,6 @@ import { API_BASE } from '../config';
 const WaterDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [employeeId, setEmployeeId] = useState("");
   const [email, setEmail] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,11 +88,11 @@ const WaterDashboard = () => {
     }
 
     // Set user info
-    setEmployeeId(user.id);
     setEmail(user.email);
 
     // Fetch initial data
     fetchGrievances();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchGrievances reads activeTab/priorityFilter from this render
   }, [user, activeTab, priorityFilter]);
 
   const analyzePriorityLocally = (grievance) => {
@@ -308,9 +306,6 @@ const WaterDashboard = () => {
       setShowResourceModal(false);
       toast.success('Resource management details submitted successfully');
 
-      // Automatically start progress after resource management submission
-      await handleStartProgress(grievanceId);
-
       fetchGrievances();
     } catch (error) {
       console.error('Error submitting resource management:', error);
@@ -340,35 +335,6 @@ const WaterDashboard = () => {
     } catch (error) {
       console.error('Error updating timeline:', error);
       toast.error('Failed to update timeline');
-    }
-  };
-
-  const handleStartProgress = async (grievanceId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/start-progress`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ comment: 'Starting progress on grievance' })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start progress');
-      }
-
-      // Refresh data
-      fetchGrievances();
-      setActiveTab('inProgress');
-    } catch (error) {
-      console.error('Error starting progress:', error);
-      setError('Failed to start progress');
     }
   };
 
@@ -527,7 +493,7 @@ const WaterDashboard = () => {
                   <div className="mb-3">
                     <h5 className="font-medium">Original Document:</h5>
                     <a
-                      href={`${API_BASE}/uploads/documents/${selectedGrievance.originalDocument.path.split(/[\/\\]/).pop()}`}
+                      href={`${API_BASE}/uploads/documents/${selectedGrievance.originalDocument.path.split(/[/\\]/).pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center mt-2 px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"
@@ -552,7 +518,7 @@ const WaterDashboard = () => {
                       {selectedGrievance.attachments.map((attachment, index) => (
                         <a
                           key={index}
-                          href={`${API_BASE}/uploads/documents/${attachment.path.split(/[\/\\]/).pop()}`}
+                          href={`${API_BASE}/uploads/documents/${attachment.path.split(/[/\\]/).pop()}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors"

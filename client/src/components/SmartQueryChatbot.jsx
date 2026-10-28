@@ -17,6 +17,7 @@ const SmartQueryChatbot = () => {
 
     useEffect(() => {
         checkAuthAndLoadMessages();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- verify auth once on mount
     }, []);
 
     useEffect(() => {
@@ -24,9 +25,6 @@ const SmartQueryChatbot = () => {
     }, [messages]);
 
     const checkAuthAndLoadMessages = async () => {
-        const token = localStorage.getItem('token');
-        console.log('Checking authentication with token:', token);
-
         try {
             const isValid = await isTokenValid();
             if (!isValid) {

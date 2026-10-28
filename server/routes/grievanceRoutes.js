@@ -1,5 +1,6 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import auth, { requireRole } from '../middleware/auth.js';
+import { withEngine } from '../utils/escalationEngine.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -30,7 +31,8 @@ import {
     analyzePriorityWithGemini,
     checkRepetitiveCases,
     submitWorkTimeline,
-    assignGrievance
+    assignGrievance,
+    getEngineFlaggedGrievances
 } from '../controllers/grievanceController.js';
 import { processDocument, upload } from '../controllers/documentController.js';
 import Grievance from '../models/Grievance.js';
@@ -133,6 +135,7 @@ router.post('/:id/assign', auth, assignGrievance);
 // Escalation routes
 router.post('/:id/escalate', auth, escalateGrievance);
 router.get('/escalated', auth, getEscalatedGrievances);
+router.get('/engine-flagged', auth, requireRole('admin'), getEngineFlaggedGrievances);
 router.post('/:id/escalation-response', auth, respondToEscalation);
 
 // Analyze priority using Gemini AI
@@ -151,7 +154,7 @@ router.get('/track/:id', async (req, res) => {
             return res.status(404).json({ error: 'Grievance not found' });
         }
 
-        res.json({ grievance });
+        res.json({ grievance: withEngine(grievance) });
     } catch (error) {
         console.error('Error tracking grievance:', error);
         res.status(500).json({ error: 'Failed to track grievance' });

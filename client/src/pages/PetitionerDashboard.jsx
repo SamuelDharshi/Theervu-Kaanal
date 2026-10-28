@@ -3,15 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../shared/Footer";
 import NavBar from "../components/NavBar";
-import { Plus, Search, Filter, RefreshCw, Eye, MessageCircle, AlertCircle, Clock, ArrowLeft, Star } from "lucide-react";
+import { Plus, Eye, MessageCircle, AlertCircle, Clock, ArrowLeft, Star } from "lucide-react";
 import moment from 'moment';
 import ChatComponent from '../components/ChatComponent';
 import TimelineView from '../components/TimelineView';
 import "../styles/Chat.css";
-import { Modal, Form, Button } from "react-bootstrap";
 import { toast } from "react-hot-toast";
 import EscalateModal from '../components/EscalateModal';
 import { API_BASE } from '../config';
+import EngineVerdict from '../components/EngineVerdict';
 
 const PetitionerDashboard = () => {
     const navigate = useNavigate();
@@ -21,7 +21,6 @@ const PetitionerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
     const [message, setMessage] = useState(location.state?.message || null);
     const [messageType] = useState(location.state?.type || 'info');
     const [stats, setStats] = useState({
@@ -51,6 +50,7 @@ const PetitionerDashboard = () => {
         if (location.state?.message) {
             window.history.replaceState({}, document.title);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount; the flash message comes from the initial location
     }, []);
 
     useEffect(() => {
@@ -89,7 +89,8 @@ const PetitionerDashboard = () => {
                     submittedDate: grievance.createdAt,
                     lastUpdated: grievance.updatedAt,
                     assignedTo: grievance.assignedTo || null,
-                    escalationEligible: grievance.escalationEligible || false,
+                    // The engine's live verdict counts as well as the flag the noon check stores.
+                    escalationEligible: grievance.escalationEligible || grievance.engine?.eligible || false,
                     isEscalated: grievance.isEscalated || false,
                     resourceManagement: grievance.resourceManagement || null
                 }));
@@ -123,11 +124,6 @@ const PetitionerDashboard = () => {
         }
     };
 
-    const handleRefresh = () => {
-        setLoading(true);
-        fetchGrievances();
-    };
-
     const getStatusBadgeClass = (status) => {
         switch (status.toLowerCase()) {
             case 'pending':
@@ -143,9 +139,7 @@ const PetitionerDashboard = () => {
         }
     };
 
-    const handleViewDetails = (grievanceId) => {
-        navigate(`/grievance/${grievanceId}`);
-    };
+    const flaggedGrievances = grievances.filter((g) => g.escalationEligible && !g.isEscalated && g.status !== 'resolved');
 
     const handleViewChat = (grievance) => {
         setSelectedGrievance(grievance);
@@ -403,6 +397,29 @@ const PetitionerDashboard = () => {
                     </div>
                 )}
 
+                {/* Petitions the escalation engine has flagged */}
+                {flaggedGrievances.length > 0 && (
+                    <section className="tk-flagged mb-4" aria-labelledby="flagged-title">
+                        <h2 id="flagged-title">
+                            The escalation engine flagged {flaggedGrievances.length === 1 ? 'one of your petitions' : `${flaggedGrievances.length} of your petitions`}
+                        </h2>
+                        <p>You can escalate it to the grievance cell with your reason. The cell answers or reassigns it to another official.</p>
+                        <ul>
+                            {flaggedGrievances.map((g) => (
+                                <li key={g._id}>
+                                    <div>
+                                        <strong>{g.grievanceId} · {g.title}</strong>
+                                        <span>{(g.engine?.reason || g.escalationReason || '').split('; ').join('. ')}</span>
+                                    </div>
+                                    <button type="button" className="btn btn-accent" onClick={() => handleEscalate(g)}>
+                                        Escalate
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
                 {/* Grievances Table */}
                 <div className="table-responsive">
                     <table className="table table-hover">
@@ -412,6 +429,7 @@ const PetitionerDashboard = () => {
                                 <th>Title</th>
                                 <th>Department</th>
                                 <th>Status</th>
+                                <th>Escalation</th>
                                 <th>Assigned To</th>
                                 <th>Submitted Date</th>
                                 <th>Last Updated</th>
@@ -421,7 +439,7 @@ const PetitionerDashboard = () => {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="8" className="text-center py-4">
+                                    <td colSpan="9" className="text-center py-4">
                                         <div className="spinner-border text-primary" role="status">
                                             <span className="visually-hidden">Loading...</span>
                                         </div>
@@ -429,7 +447,7 @@ const PetitionerDashboard = () => {
                                 </tr>
                             ) : filteredGrievances.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="text-center py-4">
+                                    <td colSpan="9" className="text-center py-4">
                                         No grievances found
                                     </td>
                                 </tr>
@@ -444,6 +462,7 @@ const PetitionerDashboard = () => {
                                                 {grievance.status}
                                             </span>
                                         </td>
+                                        <td><EngineVerdict grievance={grievance} compact /></td>
                                         <td>
                                             {grievance.assignedTo ?
                                                 `${grievance.assignedTo.firstName} ${grievance.assignedTo.lastName}` :
@@ -600,7 +619,7 @@ const PetitionerDashboard = () => {
                                     {selectedGrievance.resolutionDocument ? (
                                         <div className="text-center">
                                             <a
-                                                href={`${API_BASE}/uploads/resolution-docs/${selectedGrievance.resolutionDocument.path.split(/[\/\\]/).pop()}`}
+                                                href={`${API_BASE}/uploads/resolution-docs/${selectedGrievance.resolutionDocument.path.split(/[/\\]/).pop()}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="btn btn-primary"

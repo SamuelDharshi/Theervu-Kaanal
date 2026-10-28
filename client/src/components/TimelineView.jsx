@@ -9,31 +9,35 @@ const TimelineView = ({ grievanceId, onBack }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchTimelineStages();
-    }, [grievanceId]);
+        // Ignore a response that arrives after grievanceId changed or the view closed.
+        let cancelled = false;
 
-    const fetchTimelineStages = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const fetchTimelineStages = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-            const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/timeline-stages`, {
-                headers: headers
-            });
+                const response = await fetch(`${API_BASE}/api/grievances/${grievanceId}/timeline-stages`, {
+                    headers: headers
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch timeline stages');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch timeline stages');
+                }
+
+                const data = await response.json();
+                if (!cancelled) setTimelineStages(data.timelineStages);
+            } catch (error) {
+                console.error('Error fetching timeline stages:', error);
+                if (!cancelled) setError('Failed to load timeline stages');
+            } finally {
+                if (!cancelled) setLoading(false);
             }
+        };
 
-            const data = await response.json();
-            setTimelineStages(data.timelineStages);
-        } catch (error) {
-            console.error('Error fetching timeline stages:', error);
-            setError('Failed to load timeline stages');
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchTimelineStages();
+        return () => { cancelled = true; };
+    }, [grievanceId]);
 
     // Flat stage markers: ink for progress, red for escalation, filled for resolution.
     const getStageIcon = (stageName) => {
