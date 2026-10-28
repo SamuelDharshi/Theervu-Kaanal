@@ -368,10 +368,6 @@ npm run install:all
 
 This project is licensed under the ISC License.
 
-## Contact
-
-Project Link: [https://github.com/Joshnaacsha/Theervu-Kaanal](https://github.com/Joshnaacsha/Theervu-Kaanal)
-
 ## Acknowledgments
 
 - Google Gemini AI for smart query assistance
