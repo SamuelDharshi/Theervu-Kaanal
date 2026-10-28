@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useT } from '../i18n/LanguageContext';
 import Footer from "../shared/Footer";
 import NavBar from "../components/NavBar";
 import { MessageSquare, Phone, User } from "lucide-react";
@@ -7,6 +8,7 @@ import { Container, Row, Col, Card, Button } from "react-bootstrap";
 const CaseCard = ({ caseData, onDragStart }) => {
     const [isCommenting, setIsCommenting] = useState(false);
     const [comment, setComment] = useState("");
+    const { t } = useT();
 
     const getPriorityColor = (priority) => {
         switch (priority.toLowerCase()) {
@@ -26,10 +28,10 @@ const CaseCard = ({ caseData, onDragStart }) => {
             <Card.Body>
                 <div className="d-flex justify-content-between align-items-start">
                     <h5 className="card-title">{caseData.title}</h5>
-                    <span className={getPriorityColor(caseData.priority)}>{caseData.priority}</span>
+                    <span className={getPriorityColor(caseData.priority)}>{t(`priority.${caseData.priority}`)}</span>
                 </div>
 
-                <p className="text-muted mb-1">Case ID: {caseData.id}</p>
+                <p className="text-muted mb-1">{t('common.grievanceId')}: {caseData.id}</p>
                 <p className="text-muted">
                     <User size={16} className="me-1" />
                     {caseData.assignedOfficer}
@@ -38,11 +40,11 @@ const CaseCard = ({ caseData, onDragStart }) => {
                 <div className="d-flex justify-content-between mt-3">
                     <Button variant="outline-secondary" size="sm" onClick={() => setIsCommenting(!isCommenting)}>
                         <MessageSquare size={16} className="me-1" />
-                        Comment
+                        {t('official.comment')}
                     </Button>
                     <Button variant="outline-primary" size="sm">
                         <Phone size={16} className="me-1" />
-                        Contact
+                        {t('nav.contact')}
                     </Button>
                 </div>
 
@@ -52,18 +54,18 @@ const CaseCard = ({ caseData, onDragStart }) => {
                             className="form-control"
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            placeholder="Add your comment..."
+                            placeholder={t('official.commentPlaceholder')}
                             rows={2}
                         />
                         <div className="d-flex justify-content-end mt-2">
                             <Button variant="light" size="sm" onClick={() => setIsCommenting(false)}>
-                                Cancel
+                                {t('common.cancel')}
                             </Button>
                             <Button variant="success" size="sm" className="ms-2" onClick={() => {
                                 setComment("");
                                 setIsCommenting(false);
                             }}>
-                                Submit
+                                {t('common.submit')}
                             </Button>
                         </div>
                     </div>
@@ -74,6 +76,7 @@ const CaseCard = ({ caseData, onDragStart }) => {
 };
 
 const OfficialDashboard = () => {
+    const { t } = useT();
     const [columns, setColumns] = useState({
         assigned: {
             title: "Assigned",
@@ -138,8 +141,8 @@ const OfficialDashboard = () => {
             <Container fluid className="p-4">
                 {/* Dashboard Header */}
                 <div className="mb-4">
-                    <h2>Official Dashboard</h2>
-                    <p className="text-muted">Manage and track grievance cases</p>
+                    <h2>{t('official.boardTitle')}</h2>
+                    <p className="text-muted">{t('official.boardLede')}</p>
                 </div>
 
                 {/* Kanban Board */}
@@ -148,7 +151,7 @@ const OfficialDashboard = () => {
                         <Col key={columnId} xs={12} sm={6} md={4} className="d-flex flex-column p-2" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, columnId)}>
                             <Card className="mb-3 shadow">
                                 <Card.Body className="text-center">
-                                    <h5 className="mb-0">{column.title}</h5>
+                                    <h5 className="mb-0">{t(`status.${columnId}`)}</h5>
                                     <span className="badge bg-secondary">{column.cases.length}</span>
                                 </Card.Body>
                             </Card>

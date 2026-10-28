@@ -116,6 +116,11 @@
 
 .tk-nav__cta { padding: 0.55rem 1.1rem; }
 
+.tk-nav__lang button { font-size: 13px; padding: 6px 8px; }
+.tk-nav__link, .tk-nav__word, .tk-nav__cta, .tk-nav__signin { white-space: nowrap; }
+.tk-sheet__lang { margin: 8px 0 24px; }
+.tk-sheet__lang button { font-size: 18px; padding: 10px 14px; min-height: 48px; background: var(--paper-2); }
+
 .tk-nav__user {
   display: inline-flex !important;
   align-items: center;
@@ -213,5 +218,6 @@
 
 @media (max-width: 575px) {
   .tk-nav__signin { display: none; }
+  .tk-nav__lang { display: none; }
   .tk-nav__actions { gap: 8px; }
 }

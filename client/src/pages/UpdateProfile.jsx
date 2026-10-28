@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Save } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useT } from '../i18n/LanguageContext';
 
 const UpdateProfile = () => {
     const { user, authenticatedFetch, updateUser } = useAuth();

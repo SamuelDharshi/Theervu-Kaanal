@@ -194,7 +194,7 @@ const GrievancePortal = () => {
           <div className="lp-stage__labels" ref={labelsRef}>
             {DEPARTMENTS.map((d) => (
               <span key={d.name} className="lp-label lp-label--dept" data-anchor={`dept-${d.name}`} data-grow="0.05">
-                {t(`dept.${d.name}`)}
+                {t(`deptShort.${d.name}`)}
               </span>
             ))}
             {STAGES.map((s) => (

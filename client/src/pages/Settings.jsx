@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Lock, Mail, Edit, Phone, UserCheck, Sun, Moon, Languages } from 'lucide-react';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { useTheme } from '../context/ThemeContext';
+import { useT } from '../i18n/LanguageContext';
 
 const Settings = () => {
     const { user, authenticatedFetch } = useAuth();
@@ -40,7 +41,7 @@ const Settings = () => {
                 id: user.employeeId || user.adminId || user.id || ''
             });
         }
-    }, [user]);
+    }, [user, t]);
 
     const getUpdateProfilePath = () => {
         if (!user) return '/';
@@ -161,7 +162,13 @@ const Settings = () => {
                                         />
                                         <div>
                                             <h4 className="mb-0">{`${profileData.firstName} ${profileData.lastName}`}</h4>
-                                            <p className="text-muted mb-0">{profileData.department ? t(`dept.${profileData.department}`) : ''}</p>
+                                            <p className="text-muted mb-0">
+                                                {['Water', 'RTO', 'Electricity'].includes(profileData.department)
+                                                    ? t(`dept.${profileData.department}`)
+                                                    : ['petitioner', 'official', 'admin'].includes(profileData.department)
+                                                        ? t(`roles.${profileData.department}`)
+                                                        : profileData.department}
+                                            </p>
                                         </div>
                                     </div>
                                     <ul className="list-group list-group-flush">

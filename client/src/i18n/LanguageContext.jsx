@@ -49,13 +49,18 @@ export function LanguageProvider({ children }) {
 
   const value = useMemo(() => {
     const { dict, locale, speech } = LANGUAGES[lang];
-    // A missing translation falls back to English, then to the key itself.
+    // A missing translation falls back to English. A key built from data that
+    // has no entry (a custom stage name, an unknown status) shows that data.
+    // Validation errors are stored as keys, so t(errors.field) also accepts
+    // a plain message from the server.
     const t = (key, vars) => {
       let v = lookup(dict, key);
       if (v === undefined) v = lookup(en, key);
       if (v === undefined) {
         if (process.env.NODE_ENV !== 'production') console.warn(`[i18n] missing key: ${key}`);
-        return key;
+        // Only a dictionary path is shortened; free text (a server message) is shown as is.
+        const isPath = Object.prototype.hasOwnProperty.call(en, key.split('.')[0]);
+        return isPath ? key.split('.').pop() : key;
       }
       return interpolate(v, vars);
     };

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { Badge, Modal } from 'react-bootstrap';
 import { calculateTextSimilarity } from '../utils/semanticSimilarity';
 
 const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
+  const { t, locale } = useT();
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedGrievance, setSelectedGrievance] = useState(null);
@@ -54,7 +56,7 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -78,7 +80,7 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
         }}
         onClick={handleBadgeClick}
       >
-        Similar Cases ({repeatedCases.length})
+        {t('repeat.badge', { n: repeatedCases.length })}
       </Badge>
 
       {/* List Modal */}
@@ -90,7 +92,7 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
         style={{ zIndex: 1050 }}
       >
         <Modal.Header closeButton style={{ backgroundColor: '#f8f9fa', borderBottom: '1px solid #dee2e6' }}>
-          <Modal.Title style={{ fontSize: '1.2rem' }}>Similar Grievances Found</Modal.Title>
+          <Modal.Title style={{ fontSize: '1.2rem' }}>{t('repeat.title')}</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ padding: 0, maxHeight: '70vh', overflowY: 'auto' }}>
           {repeatedCases.map((grievance) => (
@@ -118,7 +120,7 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
                     fontSize: '0.85em',
                     marginLeft: '8px'
                   }}>
-                    {Math.round(grievance.similarity * 100)}% Similar
+                    {t('repeat.similar', { pct: Math.round(grievance.similarity * 100) })}
                   </span>
                 </div>
               </div>
@@ -150,7 +152,7 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
             ←
           </div>
           <Modal.Title style={{ fontSize: '1.1rem' }}>
-            Grievance Details
+            {t('official.details')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ padding: '20px' }}>
@@ -162,19 +164,19 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <div style={{ fontWeight: '500', marginBottom: '5px' }}>Status</div>
+                <div style={{ fontWeight: '500', marginBottom: '5px' }}>{t('common.status')}</div>
                 <Badge bg={selectedGrievance.status === 'pending' ? 'warning' : 'success'}>
-                  {selectedGrievance.status}
+                  {t(`status.${selectedGrievance.status}`)}
                 </Badge>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <div style={{ fontWeight: '500', marginBottom: '5px' }}>Created On</div>
+                <div style={{ fontWeight: '500', marginBottom: '5px' }}>{t('common.filed')}</div>
                 <div>{formatDate(selectedGrievance.createdAt)}</div>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <div style={{ fontWeight: '500', marginBottom: '5px' }}>Description</div>
+                <div style={{ fontWeight: '500', marginBottom: '5px' }}>{t('form.description')}</div>
                 <div style={{ 
                   backgroundColor: '#f8f9fa',
                   padding: '12px',
@@ -182,14 +184,14 @@ const RepeatedCaseIndicator = ({ currentGrievance, previousGrievances }) => {
                   fontSize: '0.9em',
                   lineHeight: '1.5'
                 }}>
-                  {selectedGrievance.description || 'No description available'}
+                  {selectedGrievance.description || t('common.na')}
                 </div>
               </div>
 
               <div>
-                <div style={{ fontWeight: '500', marginBottom: '5px' }}>Similarity</div>
+                <div style={{ fontWeight: '500', marginBottom: '5px' }}>{t('repeat.similarity')}</div>
                 <Badge bg="info">
-                  {Math.round(selectedGrievance.similarity * 100)}% Similar to Current Case
+                  {t('repeat.similarToCurrent', { pct: Math.round(selectedGrievance.similarity * 100) })}
                 </Badge>
               </div>
             </div>

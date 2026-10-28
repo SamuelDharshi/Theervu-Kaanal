@@ -92,11 +92,11 @@ const NavBar = ({ overlay = false }) => {
   };
 
   const links = [
-    { to: '/#engine', label: t('nav.engine') },
-    { to: '/#journey', label: t('nav.howItWorks') },
-    { to: '/#track', label: t('nav.track') },
-    { to: '/about', label: t('nav.about') },
-    { to: '/contact', label: t('nav.contact') },
+    { to: '/#engine', label: t('nav.short.engine') },
+    { to: '/#journey', label: t('nav.short.howItWorks') },
+    { to: '/#track', label: t('nav.short.track') },
+    { to: '/about', label: t('nav.short.about') },
+    { to: '/contact', label: t('nav.short.contact') },
   ];
 
   const classes = [

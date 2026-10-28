@@ -228,9 +228,41 @@ const analyzePriorityLocally = (grievance) => {
         ]
     };
 
+    // The same signals in Tamil and Hindi, so a petition written in the
+    // petitioner's own language is ranked the same way. Phrases, not single
+    // short words, to avoid matching inside unrelated words.
+    const indicHighPriorityKeywords = {
+        rto: [
+            'விபத்து', 'உயிரிழப்பு', 'காயம்', 'மோதி', 'குடிபோதை', 'அபாயகரமான',
+            'दुर्घटना', 'हादसा', 'मौत', 'घायल', 'टक्कर', 'नशे में', 'खतरनाक', 'ख़तरनाक'
+        ],
+        water: [
+            'குடிநீர் இல்லை', 'தண்ணீர் இல்லை', 'கழிவுநீர்', 'மாசடைந்த', 'அசுத்தமான', 'குழாய் உடைந்த', 'வெள்ளம்', 'நோய்',
+            'पानी नहीं', 'दूषित', 'गंदा पानी', 'सीवर', 'पाइप फट', 'बाढ़', 'बीमारी'
+        ],
+        electricity: [
+            'மின்சாரம் தாக்கி', 'மின் கம்பி அறுந்து', 'அறுந்து விழுந்த', 'தீப்பொறி', 'தீ விபத்து', 'மின்மாற்றி வெடி', 'மின் தடை', 'மின்கசிவு',
+            'करंट', 'बिजली का झटका', 'तार टूट', 'चिंगारी', 'आग लग', 'ट्रांसफॉर्मर फट', 'ट्रांसफ़ॉर्मर फट', 'बिजली गुल', 'बिजली नहीं', 'शॉर्ट सर्किट'
+        ]
+    };
+    const indicMediumPriorityKeywords = {
+        rto: [
+            'உரிமம் புதுப்பி', 'ஓட்டுநர் உரிமம்', 'பதிவு புதுப்பி', 'சாலை வரி', 'போக்குவரத்து நெரிசல்', 'வாகனத் தகுதி',
+            'लाइसेंस', 'नवीनीकरण', 'पंजीकरण', 'परमिट', 'रोड टैक्स', 'जाम', 'फिटनेस'
+        ],
+        water: [
+            'கசிவு', 'குறைந்த அழுத்தம்', 'குடிநீர் மீட்டர்', 'குடிநீர் கட்டணம்', 'வடிகால்', 'குடிநீர் இணைப்பு',
+            'रिसाव', 'लीकेज', 'कम दबाव', 'पानी का मीटर', 'पानी का बिल', 'नाली', 'पानी का कनेक्शन'
+        ],
+        electricity: [
+            'மின்னழுத்த ஏற்ற இறக்கம்', 'மின் கட்டணம்', 'மின் மீட்டர்', 'பராமரிப்பு',
+            'वोल्टेज', 'बिजली का बिल', 'बिजली का मीटर', 'रखरखाव'
+        ]
+    };
+
     // Get department-specific keywords
-    const deptHighPriority = highPriorityKeywords[department] || [];
-    const deptMediumPriority = mediumPriorityKeywords[department] || [];
+    const deptHighPriority = [...(highPriorityKeywords[department] || []), ...(indicHighPriorityKeywords[department] || [])];
+    const deptMediumPriority = [...(mediumPriorityKeywords[department] || []), ...(indicMediumPriorityKeywords[department] || [])];
 
     // Check for matches
     const hasHighPriority = deptHighPriority.some(keyword => combinedText.includes(keyword));
