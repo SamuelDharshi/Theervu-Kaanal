@@ -1060,7 +1060,8 @@
     padding-top: 96px;
   }
 
-  .lp-hero__tamil { font-size: 15vw; }
+  .lp-hero__tamil { font-size: 11.6vw; }
+  .lp-hero__type { background: var(--paper); padding-bottom: 20px; }
   .lp-hero__title { font-size: 13.4vw; }
   .lp-hero__lede { font-size: 17px; }
   .lp-hero__actions .btn { flex: 1 1 100%; }

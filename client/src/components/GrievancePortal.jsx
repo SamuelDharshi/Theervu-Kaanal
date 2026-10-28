@@ -147,7 +147,7 @@ const GrievancePortal = () => {
       const w = window.innerWidth;
       if (w >= 992) scene.setViewShift(0.2, 0);
       else if (w >= 640) scene.setViewShift(0.12, 0.16);
-      else scene.setViewShift(0, 0.2);
+      else scene.setViewShift(0, 0.3);
     };
     layout();
     window.addEventListener('resize', layout);

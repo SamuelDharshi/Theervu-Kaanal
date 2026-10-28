@@ -278,9 +278,9 @@ const AdminDashboard = () => {
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="resolved" fill="#28a745" name="Resolved" barSize={50} />
-                            <Bar dataKey="pending" fill="#ffc107" name="Pending" barSize={50} />
-                            <Bar dataKey="inProgress" fill="#17a2b8" name="In Progress" barSize={50} />
+                            <Bar dataKey="resolved" fill="#2d6a4f" name="Resolved" barSize={50} />
+                            <Bar dataKey="pending" fill="#b7791f" name="Pending" barSize={50} />
+                            <Bar dataKey="inProgress" fill="#19486a" name="In Progress" barSize={50} />
                         </BarChart>
                     )}
                 </Card>
@@ -303,8 +303,8 @@ const AdminDashboard = () => {
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Line type="monotone" dataKey="total" stroke="#007bff" name="Total Cases" />
-                            <Line type="monotone" dataKey="resolved" stroke="#28a745" name="Resolved Cases" />
+                            <Line type="monotone" dataKey="total" stroke="#141416" name="Total Cases" />
+                            <Line type="monotone" dataKey="resolved" stroke="#2d6a4f" name="Resolved Cases" />
                         </LineChart>
                     )}
                 </Card>

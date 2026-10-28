@@ -34,15 +34,16 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          District *
+    <div className="row g-3">
+      <div className="col-md-4">
+        <label htmlFor="loc-district" className="form-label">
+          District*
         </label>
         <select
+          id="loc-district"
           value={selectedDistrict || initialValues.district || ''}
           onChange={handleDistrictSelect}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="form-select"
           required
         >
           <option value="">Select District</option>
@@ -54,14 +55,15 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Division *
+      <div className="col-md-4">
+        <label htmlFor="loc-division" className="form-label">
+          Division*
         </label>
         <select
+          id="loc-division"
           value={selectedDivision || initialValues.division || ''}
           onChange={handleDivisionSelect}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="form-select"
           required
           disabled={!selectedDistrict}
         >
@@ -74,14 +76,15 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Taluk *
+      <div className="col-md-4">
+        <label htmlFor="loc-taluk" className="form-label">
+          Taluk*
         </label>
         <select
+          id="loc-taluk"
           value={selectedTaluk || initialValues.taluk || ''}
           onChange={handleTalukSelect}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="form-select"
           required
           disabled={!selectedDivision}
         >

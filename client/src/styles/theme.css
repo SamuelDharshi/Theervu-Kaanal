@@ -657,3 +657,65 @@ code, kbd, pre, samp { font-family: var(--font-mono); }
 }
 
 .text-white-50 { color: rgba(232, 230, 225, 0.6) !important; }
+
+/*
+ * Compatibility for the Tailwind-style class names used in the department
+ * dashboards' case panels (Tailwind itself is not loaded). Mapped to tokens.
+ */
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
+.flex-1 { flex: 1 1 0%; }
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: minmax(0, 1fr); }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.space-y-1 > * + * { margin-top: 0.25rem; }
+.space-y-6 > * + * { margin-top: 1.5rem; }
+.mr-2 { margin-right: 0.5rem; }
+.p-6 { padding: 1.5rem; }
+.w-12 { width: 3rem; }
+.h-12 { height: 3rem; }
+.rounded-lg { border-radius: var(--radius); }
+.rounded-full { border-radius: 999px; }
+.border-gray-200 { border-color: var(--paper-3) !important; }
+.text-xs { font-size: 0.8125rem; }
+.text-sm { font-size: 0.875rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.6rem; letter-spacing: -0.03em; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.leading-relaxed { line-height: 1.65; }
+.text-gray-900, .text-gray-800, .text-gray-700 { color: var(--ink); }
+.text-gray-600, .text-gray-500, .text-gray-400 { color: var(--muted); }
+.text-blue-600 { color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+.bg-gray-50 { background-color: var(--surface); }
+.bg-blue-100 { background-color: var(--paper-2); }
+.bg-blue-500 { background-color: var(--ink); color: var(--paper); }
+.hover\:bg-blue-600:hover { background-color: var(--accent); color: #fff; }
+.hover\:bg-gray-100:hover { background-color: var(--paper-2); }
+.hover\:text-gray-500:hover { color: var(--ink); }
+.transition-colors { transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out); }
+
+/* Disabled buttons keep their variant's palette colour, just quieter */
+.btn { --bs-btn-disabled-opacity: 0.4; }
+.btn-outline-primary, .btn-outline-secondary, .btn-outline-dark, .btn-outline-success,
+.btn-outline-info, .btn-outline-light {
+  --bs-btn-disabled-color: var(--ink);
+  --bs-btn-disabled-border-color: var(--ink);
+  --bs-btn-disabled-bg: transparent;
+}
+.btn-outline-danger, .btn-outline-warning {
+  --bs-btn-disabled-color: var(--accent);
+  --bs-btn-disabled-border-color: var(--accent);
+  --bs-btn-disabled-bg: transparent;
+}
+.btn-danger, .btn-accent { --bs-btn-disabled-bg: var(--accent); --bs-btn-disabled-border-color: var(--accent); --bs-btn-disabled-color: #fff; }
+.btn-success { --bs-btn-disabled-bg: var(--ok); --bs-btn-disabled-border-color: var(--ok); --bs-btn-disabled-color: #fff; }
+.btn-warning { --bs-btn-disabled-bg: var(--warn); --bs-btn-disabled-border-color: var(--warn); --bs-btn-disabled-color: #fff; }
+.btn-info { --bs-btn-disabled-bg: var(--info); --bs-btn-disabled-border-color: var(--info); --bs-btn-disabled-color: #fff; }
+.btn-secondary, .btn-light { --bs-btn-disabled-bg: var(--paper-2); --bs-btn-disabled-border-color: var(--paper-2); --bs-btn-disabled-color: var(--ink); }
