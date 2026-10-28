@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./styles/theme.css";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GrievancePortal from "./components/GrievancePortal";
@@ -28,6 +29,18 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
+import MotionLayer from './motion/MotionLayer';
+
+// Re-key the page wrapper per section of the app so each section replays its
+// entrance, while tabs inside one dashboard (e.g. /admin/*) keep their state.
+function PageFrame({ children }) {
+  const { pathname } = useLocation();
+  return (
+    <div className="tk-page" key={pathname.split('/')[1] || 'home'}>
+      {children}
+    </div>
+  );
+}
 
 function App() {
   useEffect(() => {
@@ -43,23 +56,27 @@ function App() {
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#363636',
-                color: '#fff',
+                background: '#141416',
+                color: '#e8e6e1',
+                borderRadius: '2px',
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
               },
               success: {
                 duration: 3000,
-                style: {
-                  background: '#22c55e',
-                },
+                iconTheme: { primary: '#5fb08a', secondary: '#141416' },
               },
               error: {
                 duration: 5000,
                 style: {
-                  background: '#ef4444',
+                  background: '#d2402a',
+                  color: '#fff',
                 },
               },
             }}
           />
+          <MotionLayer />
+          <PageFrame>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<GrievancePortal />} />
@@ -110,6 +127,7 @@ function App() {
               <Route path="/official/update-profile" element={<UpdateProfile />} />
             </Route>
           </Routes>
+          </PageFrame>
         </ThemeProvider>
       </AuthProvider>
     </Router>

@@ -8,7 +8,7 @@ export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
         // Check for saved theme, or user's OS preference
-        return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        return savedTheme || 'light';
     });
 
     useEffect(() => {

@@ -1,0 +1,130 @@
+.tk-footer {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 96px var(--gutter) 28px;
+  overflow: hidden;
+}
+
+[data-bs-theme="dark"] .tk-footer { background: #0b0b0c; color: #ece9e3; }
+
+.tk-footer a,
+.tk-footer span { color: inherit; }
+
+.tk-footer__sdg {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 2fr 2fr;
+  gap: 32px;
+  align-items: center;
+  padding-bottom: 72px;
+}
+
+.tk-footer__sdg-lead {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.7;
+  max-width: 14ch;
+}
+
+.tk-footer__goal {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.tk-footer__goal strong {
+  display: block;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.tk-footer__goal em {
+  display: block;
+  font-style: normal;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.tk-footer__badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  color: #fff !important;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.tk-footer__badge small {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-top: -14px;
+}
+
+.tk-footer__cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  padding: 48px 0 24px;
+  border-top: 1px solid rgba(232, 230, 225, 0.18);
+}
+
+.tk-footer__cols > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tk-footer__h {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: inherit;
+  opacity: 0.55;
+  margin: 0 0 6px;
+}
+
+.tk-footer__cols a {
+  text-decoration: none;
+  font-size: 16px;
+  width: fit-content;
+  background: linear-gradient(var(--accent), var(--accent)) left bottom / 0 2px no-repeat;
+  transition: background-size 0.45s var(--ease-out), color 0.2s;
+}
+
+.tk-footer__cols a:hover {
+  color: #fff;
+  background-size: 100% 2px;
+}
+
+.tk-footer__cols span { font-size: 16px; opacity: 0.85; }
+
+.tk-footer__mark {
+  font-size: 11.2vw;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  white-space: nowrap;
+  margin: 24px 0 8px -0.04em;
+}
+
+.tk-footer__base {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.tk-footer__base a { text-decoration: none; }
+.tk-footer__base a:hover { color: var(--accent); }
+
+@media (max-width: 900px) {
+  .tk-footer__sdg { grid-template-columns: 1fr; gap: 20px; }
+  .tk-footer__cols { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Footer from "../shared/Footer";
-import NavBar from "../components/NavBar";
-import { Shield, ArrowLeft } from "lucide-react";
+import AuthShell from "../components/AuthShell";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getRedirectPath } from "../utils/authUtils";
 
@@ -68,88 +67,61 @@ const AdminLogin = () => {
     };
 
     return (
-        <>
-            <NavBar />
-            <div className="container py-4">
-                <div className="d-flex align-items-center mb-4">
-                    <Link to="/login" className="btn btn-outline-danger me-3">
-                        <ArrowLeft size={18} className="me-1" /> Back
-                    </Link>
-                    <h2 className="mb-0">Admin Login</h2>
+        <AuthShell
+            role="For the grievance cell: escalations, analytics and Smart Query"
+            title="Grievance cell sign in"
+            lede="Escalated petitions land here first."
+            back="/login"
+            backLabel="All sign-in options"
+            accentThread={5}
+        >
+            {serverError && <div className="alert alert-danger" role="alert">{serverError}</div>}
+            <form onSubmit={handleSubmit} noValidate>
+                <div className="mb-3">
+                    <label htmlFor="adminId" className="form-label">Admin ID</label>
+                    <input
+                        type="text"
+                        className={`form-control ${errors.adminId ? "is-invalid" : ""}`}
+                        id="adminId"
+                        name="adminId"
+                        value={formData.adminId}
+                        onChange={handleChange}
+                        autoComplete="username"
+                    />
+                    {errors.adminId && <div className="invalid-feedback">{errors.adminId}</div>}
                 </div>
-
-                <div className="card shadow-sm">
-                    <div className="card-body">
-                        <div className="row mb-4 justify-content-center">
-                            <div className="col-md-6">
-                                <div className="text-center mb-4">
-                                    <div className="bg-danger d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: "80px", height: "80px" }}>
-                                        <Shield size={40} className="text-white" />
-                                    </div>
-                                    <h4>Admin Access</h4>
-                                    <p className="text-muted">Enter your credentials to access the admin panel</p>
-                                </div>
-
-                                {serverError && <div className="alert alert-danger">{serverError}</div>}
-
-                                <form onSubmit={handleSubmit}>
-                                    <div className="mb-3">
-                                        <label htmlFor="adminId" className="form-label">Admin ID*</label>
-                                        <input
-                                            type="text"
-                                            className={`form-control ${errors.adminId ? "is-invalid" : ""}`}
-                                            id="adminId"
-                                            name="adminId"
-                                            value={formData.adminId}
-                                            onChange={handleChange}
-                                            placeholder="Enter your Admin ID"
-                                        />
-                                        {errors.adminId && <div className="invalid-feedback">{errors.adminId}</div>}
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label htmlFor="email" className="form-label">Email*</label>
-                                        <input
-                                            type="email"
-                                            className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                                            id="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            placeholder="Enter your email"
-                                        />
-                                        {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label htmlFor="password" className="form-label">Password*</label>
-                                        <input
-                                            type="password"
-                                            className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                                            id="password"
-                                            name="password"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            placeholder="Enter your password"
-                                        />
-                                        {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                                    </div>
-
-                                    <div className="d-grid gap-2 mt-4">
-                                        <button type="submit" className="btn btn-danger btn-lg">Login to Admin Panel</button>
-                                    </div>
-                                </form>
-
-                                <div className="text-center mt-4">
-                                    <p>Need an admin account? <Link to="/register/admin" className="text-danger">Register here</Link></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="mb-3">
+                    <label htmlFor="email" className="form-label">Email</label>
+                    <input
+                        type="email"
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        autoComplete="email"
+                    />
+                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                 </div>
-            </div>
-            <Footer />
-        </>
+                <div className="mb-3">
+                    <label htmlFor="password" className="form-label">Password</label>
+                    <input
+                        type="password"
+                        className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        autoComplete="current-password"
+                    />
+                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                </div>
+                <button type="submit" className="btn btn-primary btn-lg tk-auth__submit">
+                    Sign in <ArrowRight size={18} aria-hidden="true" />
+                </button>
+            </form>
+            <p className="tk-auth__alt">Need access? <Link to="/register/admin">Register as an admin</Link></p>
+        </AuthShell>
     );
 };
 

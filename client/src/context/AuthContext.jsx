@@ -414,7 +414,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="tk-boot" role="status" aria-label="Loading">
+                <span className="tk-boot__mark" aria-hidden="true"><i /><i /><i /></span>
+            </div>
+        );
     }
 
     const value = {

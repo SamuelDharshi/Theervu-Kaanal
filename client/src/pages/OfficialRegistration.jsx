@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, Link as RouterLink } from 'react-router-dom';
-import Footer from '../shared/Footer';
-import NavBar from '../components/NavBar';
-import { FileText, ArrowLeft } from 'lucide-react';
+import AuthShell from '../components/AuthShell';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import LocationDropdowns from '../components/LocationDropdowns';
@@ -159,255 +157,234 @@ const OfficialRegistration = () => {
   };
 
   return (
-    <>
-      <NavBar />
-      <div className="container py-4">
-        <div className="d-flex align-items-center mb-4">
-          <Link to="/register" className="btn btn-outline-success me-3">
-            <ArrowLeft size={18} className="me-1" /> Back
-          </Link>
-          <h2 className="mb-0">Official Registration</h2>
+    <AuthShell
+      role="For department officials in Water, RTO and Electricity"
+      title="Register as an official"
+      lede="Your jurisdiction decides which petitions land in your queue."
+      back="/register"
+      backLabel="All account types"
+      accentThread={3}
+      wide
+    >
+
+      <form onSubmit={handleSubmit}>
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label htmlFor="firstName" className="form-label">First Name*</label>
+            <input
+              type="text"
+              className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+            />
+            {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+          </div>
+
+          <div className="col-md-6">
+            <label htmlFor="lastName" className="form-label">Last Name*</label>
+            <input
+              type="text"
+              className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+            />
+            {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+          </div>
         </div>
 
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <div className="row mb-4 justify-content-center">
-              <div className="col-md-8">
-                <div className="text-center mb-4">
-                  <div className="bg-success d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: '80px', height: '80px' }}>
-                    <FileText size={40} className="text-white" />
-                  </div>
-                  <h4>Create Your Official Account</h4>
-                  <p className="text-muted">Fill out the form below to register as a department official</p>
-                </div>
+        <div className="row g-3 mt-1">
+          <div className="col-md-6">
+            <label htmlFor="email" className="form-label">Email*</label>
+            <input
+              type="email"
+              className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+          </div>
 
-                <form onSubmit={handleSubmit}>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label htmlFor="firstName" className="form-label">First Name*</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                      />
-                      {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
-                    </div>
+          <div className="col-md-6">
+            <label htmlFor="phone" className="form-label">Phone*</label>
+            <input
+              type="tel"
+              className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+            />
+            {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+          </div>
+        </div>
 
-                    <div className="col-md-6">
-                      <label htmlFor="lastName" className="form-label">Last Name*</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                      />
-                      {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
-                    </div>
-                  </div>
+        <div className="row g-3 mt-1">
+          <div className="col-md-6">
+            <label htmlFor="employeeId" className="form-label">Employee ID*</label>
+            <input
+              type="text"
+              className={`form-control ${errors.employeeId ? 'is-invalid' : ''}`}
+              id="employeeId"
+              name="employeeId"
+              value={formData.employeeId}
+              onChange={handleChange}
+            />
+            {errors.employeeId && <div className="invalid-feedback">{errors.employeeId}</div>}
+          </div>
 
-                  <div className="row g-3 mt-1">
-                    <div className="col-md-6">
-                      <label htmlFor="email" className="form-label">Email*</label>
-                      <input
-                        type="email"
-                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                      />
-                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                    </div>
+          <div className="col-md-6">
+            <label htmlFor="department" className="form-label">Department*</label>
+            <select
+              className={`form-select ${errors.department ? 'is-invalid' : ''}`}
+              id="department"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+            >
+              <option value="">Select Department</option>
+              <option value="Water">Water</option>
+              <option value="RTO">RTO</option>
+              <option value="Electricity">Electricity</option>
+            </select>
+            {errors.department && <div className="invalid-feedback">{errors.department}</div>}
+          </div>
+        </div>
 
-                    <div className="col-md-6">
-                      <label htmlFor="phone" className="form-label">Phone*</label>
-                      <input
-                        type="tel"
-                        className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
-                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
-                    </div>
-                  </div>
+        <div className="row g-3 mt-1">
+          <div className="col-12">
+            <label htmlFor="designation" className="form-label">Designation*</label>
+            <input
+              type="text"
+              className={`form-control ${errors.designation ? 'is-invalid' : ''}`}
+              id="designation"
+              name="designation"
+              value={formData.designation}
+              onChange={handleChange}
+            />
+            {errors.designation && <div className="invalid-feedback">{errors.designation}</div>}
+          </div>
+        </div>
 
-                  <div className="row g-3 mt-1">
-                    <div className="col-md-6">
-                      <label htmlFor="employeeId" className="form-label">Employee ID*</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.employeeId ? 'is-invalid' : ''}`}
-                        id="employeeId"
-                        name="employeeId"
-                        value={formData.employeeId}
-                        onChange={handleChange}
-                      />
-                      {errors.employeeId && <div className="invalid-feedback">{errors.employeeId}</div>}
-                    </div>
+        <div className="row g-3 mt-1">
+          <div className="col-12">
+            <LocationDropdowns
+              onLocationChange={handleLocationChange}
+              initialValues={{
+                district: formData.district,
+                division: formData.division,
+                taluk: formData.taluk
+              }}
+            />
+          </div>
+        </div>
 
-                    <div className="col-md-6">
-                      <label htmlFor="department" className="form-label">Department*</label>
-                      <select
-                        className={`form-select ${errors.department ? 'is-invalid' : ''}`}
-                        id="department"
-                        name="department"
-                        value={formData.department}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Department</option>
-                        <option value="Water">Water</option>
-                        <option value="RTO">RTO</option>
-                        <option value="Electricity">Electricity</option>
-                      </select>
-                      {errors.department && <div className="invalid-feedback">{errors.department}</div>}
-                    </div>
-                  </div>
+        <div className="row g-3 mt-1">
+          <div className="col-md-4">
+            <label htmlFor="city" className="form-label">City*</label>
+            <input
+              type="text"
+              className="form-control"
+              id="city"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+            />
+          </div>
 
-                  <div className="row g-3 mt-1">
-                    <div className="col-12">
-                      <label htmlFor="designation" className="form-label">Designation*</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.designation ? 'is-invalid' : ''}`}
-                        id="designation"
-                        name="designation"
-                        value={formData.designation}
-                        onChange={handleChange}
-                      />
-                      {errors.designation && <div className="invalid-feedback">{errors.designation}</div>}
-                    </div>
-                  </div>
+          <div className="col-md-4">
+            <label htmlFor="state" className="form-label">State*</label>
+            <input
+              type="text"
+              className="form-control"
+              id="state"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+            />
+          </div>
 
-                  <div className="row g-3 mt-1">
-                    <div className="col-12">
-                      <LocationDropdowns
-                        onLocationChange={handleLocationChange}
-                        initialValues={{
-                          district: formData.district,
-                          division: formData.division,
-                          taluk: formData.taluk
-                        }}
-                      />
-                    </div>
-                  </div>
+          <div className="col-md-4">
+            <label htmlFor="pincode" className="form-label">Pincode*</label>
+            <input
+              type="text"
+              className="form-control"
+              id="pincode"
+              name="pincode"
+              value={formData.pincode}
+              onChange={handleChange}
+              pattern="[0-9]{6}"
+            />
+          </div>
+        </div>
 
-                  <div className="row g-3 mt-1">
-                    <div className="col-md-4">
-                      <label htmlFor="city" className="form-label">City*</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                      />
-                    </div>
+        <div className="row g-3 mt-1">
+          <div className="col-md-6">
+            <label htmlFor="password" className="form-label">Password*</label>
+            <input
+              type="password"
+              className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+          </div>
 
-                    <div className="col-md-4">
-                      <label htmlFor="state" className="form-label">State*</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleChange}
-                      />
-                    </div>
+          <div className="col-md-6">
+            <label htmlFor="confirmPassword" className="form-label">Confirm Password*</label>
+            <input
+              type="password"
+              className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
+            {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+          </div>
+        </div>
 
-                    <div className="col-md-4">
-                      <label htmlFor="pincode" className="form-label">Pincode*</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="pincode"
-                        name="pincode"
-                        value={formData.pincode}
-                        onChange={handleChange}
-                        pattern="[0-9]{6}"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="row g-3 mt-1">
-                    <div className="col-md-6">
-                      <label htmlFor="password" className="form-label">Password*</label>
-                      <input
-                        type="password"
-                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                      />
-                      {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                    </div>
-
-                    <div className="col-md-6">
-                      <label htmlFor="confirmPassword" className="form-label">Confirm Password*</label>
-                      <input
-                        type="password"
-                        className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                      />
-                      {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
-                    </div>
-                  </div>
-
-                  <div className="row mt-4">
-                    <div className="col-12">
-                      <div className="alert alert-info" role="alert">
-                        <small>Note: Your registration will be verified by the appropriate department before approval.</small>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row mt-2">
-                    <div className="col-12">
-                      <div className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          id="terms"
-                          required
-                        />
-                        <label className="form-check-label" htmlFor="terms">
-                          I agree to the <RouterLink to="/terms-and-conditions">Terms of Service</RouterLink> and <RouterLink to="/privacy-policy">Privacy Policy</RouterLink>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="d-grid gap-2 mt-4">
-                    <button type="submit" className="btn btn-success btn-lg">
-                      Register as Official
-                    </button>
-                  </div>
-                </form>
-
-                <div className="text-center mt-4">
-                  <p>
-                    Already have an account? <Link to="/login/official" className="text-success">Login here</Link>
-                  </p>
-                </div>
-              </div>
+        <div className="row mt-4">
+          <div className="col-12">
+            <div className="alert alert-info" role="alert">
+              <small>Note: Your registration will be verified by the appropriate department before approval.</small>
             </div>
           </div>
         </div>
-      </div>
-      <Footer />
-    </>
+
+        <div className="row mt-2">
+          <div className="col-12">
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="terms"
+                required
+              />
+              <label className="form-check-label" htmlFor="terms">
+                I agree to the <RouterLink to="/terms-and-conditions">Terms of Service</RouterLink> and <RouterLink to="/privacy-policy">Privacy Policy</RouterLink>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="d-grid gap-2 mt-4">
+          <button type="submit" className="btn btn-success btn-lg">
+            Register as Official
+          </button>
+        </div>
+      </form>
+      <p className="tk-auth__alt">
+        Already have an account? <Link to="/login/official">Sign in</Link>
+      </p>
+    </AuthShell>
   );
 };
 

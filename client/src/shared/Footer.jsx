@@ -1,58 +1,66 @@
 import React from 'react';
-import shield2 from '../assets/shield2.png';
+import { Link } from 'react-router-dom';
 import '../styles/Footer.css';
+
 const Footer = () => {
   return (
-    <footer className="bg-black text-white py-4">      <div className="container">
-      <div className="row">
-        <div className="col-12 col-lg-4 mb-4 mb-lg-0">
-          <div className="d-flex align-items-center mb-3">
-            <img src={shield2} alt="Logo" width="32" height="32" className="me-2 rounded" />
-            <h5 className="mb-0 fw-bold">Grievance Portal</h5>
-          </div>
-          <p className="small mb-4">
-            A dedicated platform to address and resolve grievances efficiently and transparently.
-          </p>
+    <footer className="tk-footer">
+      <div className="tk-footer__sdg" data-reveal>
+        <p className="tk-footer__sdg-lead">UN Sustainable Development Goals</p>
+        <div className="tk-footer__goal">
+          <span className="tk-footer__badge" style={{ background: 'var(--sdg16)' }}>16<small>SDG</small></span>
+          <span>
+            <strong>Peace, Justice and Strong Institutions</strong>
+            <em>Target 16.6 accountable, transparent institutions</em>
+          </span>
         </div>
-
-        <div className="col-12 col-lg-8">
-          <div className="row">
-            <div className="col-12 col-md-4 mb-4 mb-md-0">
-              <h6 className="fw-bold mb-3">Quick Links</h6>
-              <ul className="list-unstyled small">
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Home</a></li>
-                <li className="mb-2"><a href="#" className="text-decoration-none ">About Us</a></li>
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Contact</a></li>
-                <li><a href="#" className="text-decoration-none ">FAQs</a></li>
-              </ul>
-            </div>
-
-            <div className="col-12 col-md-4 mb-4 mb-md-0">
-              <h6 className="fw-bold mb-3">Legal</h6>
-              <ul className="list-unstyled small">
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Privacy Policy</a></li>
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Terms of Service</a></li>
-                <li><a href="#" className="text-decoration-none ">Data Protection</a></li>
-              </ul>
-            </div>
-
-            <div className="col-12 col-md-4">
-              <h6 className="fw-bold mb-3">Connect</h6>
-              <ul className="list-unstyled small">
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Email Us</a></li>
-                <li className="mb-2"><a href="#" className="text-decoration-none ">Helpline</a></li>
-                <li><a href="#" className="text-decoration-none ">Social Media</a></li>
-              </ul>
-            </div>
-          </div>
+        <div className="tk-footer__goal">
+          <span className="tk-footer__badge" style={{ background: 'var(--sdg10)' }}>10<small>SDG</small></span>
+          <span>
+            <strong>Reduced Inequalities</strong>
+            <em>Target 10.2 public services open to every citizen</em>
+          </span>
         </div>
       </div>
 
-      <div className="border-top border-secondary mt-4 pt-3 text-center text-md-start small ">
-        <p className="mb-0">&copy; {new Date().getFullYear()} Grievance Portal. All rights reserved.</p>
+      <div className="tk-footer__cols">
+        <div>
+          <h2 className="tk-footer__h">Citizens</h2>
+          <Link to="/submit-grievance">File a grievance</Link>
+          <Link to="/#track">Track a petition</Link>
+          <Link to="/register/petitioner">Create an account</Link>
+        </div>
+        <div>
+          <h2 className="tk-footer__h">Staff</h2>
+          <Link to="/login/official">Department officials</Link>
+          <Link to="/login/admin">Grievance cell</Link>
+          <Link to="/register/official">Official registration</Link>
+        </div>
+        <div>
+          <h2 className="tk-footer__h">About</h2>
+          <Link to="/about">How it works</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/privacy-policy">Privacy policy</Link>
+          <Link to="/terms-and-conditions">Terms and conditions</Link>
+        </div>
+        <div>
+          <h2 className="tk-footer__h">Built with</h2>
+          <span>React, Material UI</span>
+          <span>Express, MongoDB, Socket.io</span>
+          <span>Gemini, Stream Chat, Supabase</span>
+        </div>
       </div>
-    </div>
 
+      <div className="tk-footer__mark" aria-hidden="true">
+        <span className="tk-tamil">தீர்வு காணல்</span>
+      </div>
+
+      <div className="tk-footer__base">
+        <span>&copy; {new Date().getFullYear()} Theervu-Kaanal · Grievance redressal for Tamil Nadu</span>
+        <a href="#top" onClick={(e) => { e.preventDefault(); (window.__lenis ? window.__lenis.scrollTo(0) : window.scrollTo({ top: 0, behavior: 'smooth' })); }}>
+          Back to top ↑
+        </a>
+      </div>
     </footer>
   );
 };

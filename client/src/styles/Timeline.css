@@ -13,7 +13,7 @@
     content: '';
     position: absolute;
     width: 2px;
-    background: #e0e0e0;
+    background: var(--line);
     top: 0;
     bottom: 0;
     left: 50px;
@@ -28,8 +28,8 @@
 }
 
 .timeline-icon {
-    background: #fff;
-    border: 2px solid #3498db;
+    background: var(--surface);
+    border: 2px solid var(--ink);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -42,46 +42,46 @@
 }
 
 .timeline-content {
-    background: #fff;
+    background: var(--surface);
     padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    box-shadow: none;
     flex: 1;
 }
 
 .timeline-content h4 {
     margin: 0 0 10px;
-    color: #2c3e50;
+    color: var(--ink);
     font-size: 1.1em;
 }
 
 .timeline-content .date {
-    color: #7f8c8d;
+    color: var(--muted);
     font-size: 0.9em;
     margin-bottom: 10px;
 }
 
 .timeline-content .description {
-    color: #34495e;
+    color: var(--ink);
     line-height: 1.5;
     margin: 0;
 }
 
 /* Stage-specific colors */
 .timeline-item:nth-child(1) .timeline-icon {
-    border-color: #3498db; /* Blue for Grievance Filed */
+    border-color: var(--ink); /* Blue for Grievance Filed */
 }
 
 .timeline-item:nth-child(2) .timeline-icon {
-    border-color: #f1c40f; /* Yellow for Under Review */
+    border-color: var(--warn); /* Yellow for Under Review */
 }
 
 .timeline-item:nth-child(3) .timeline-icon {
-    border-color: #e67e22; /* Orange for Investigation */
+    border-color: var(--warn); /* Orange for Investigation */
 }
 
 .timeline-item:nth-child(4) .timeline-icon {
-    border-color: #27ae60; /* Green for Resolution */
+    border-color: var(--ok); /* Green for Resolution */
 }
 
 /* Responsive design */
@@ -99,4 +99,22 @@
     .timeline-content {
         margin-left: 10px;
     }
+}
+
+/* Flat markers and staggered entrance */
+.timeline-dot {
+    display: block;
+    width: 12px;
+    height: 12px;
+    background: var(--ink);
+}
+
+.timeline-dot--done { width: 16px; height: 16px; }
+.timeline-dot--escalated { background: var(--accent); transform: rotate(45deg); }
+.timeline-item.is-escalated .timeline-icon { border-color: var(--accent); }
+.timeline-item.is-escalated h4 { color: var(--accent); }
+
+.timeline-item {
+    animation: tk-page-in 0.6s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 90ms);
 }

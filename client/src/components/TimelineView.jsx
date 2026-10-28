@@ -35,23 +35,10 @@ const TimelineView = ({ grievanceId, onBack }) => {
         }
     };
 
+    // Flat stage markers: ink for progress, red for escalation, filled for resolution.
     const getStageIcon = (stageName) => {
-        switch (stageName) {
-            case 'Grievance Filed':
-                return '📄';
-            case 'Under Review':
-                return '🔎';
-            case 'Investigation':
-                return '🕵️';
-            case 'Escalated':
-                return '⚠️';
-            case 'Reassigned':
-                return '🔄';
-            case 'Resolution':
-                return '🏁';
-            default:
-                return '📍';
-        }
+        const kind = stageName === 'Escalated' ? 'escalated' : stageName === 'Resolution' ? 'done' : 'step';
+        return <span className={`timeline-dot timeline-dot--${kind}`} aria-hidden="true" />;
     };
 
     // Define the logical order of stages
@@ -88,7 +75,7 @@ const TimelineView = ({ grievanceId, onBack }) => {
         return new Date(a.date) - new Date(b.date);
     });
 
-    if (loading) return <div>Loading timeline...</div>;
+    if (loading) return <div className="timeline-container text-muted">Loading timeline…</div>;
     if (error) return <div className="error">{error}</div>;
 
     return (
@@ -105,7 +92,7 @@ const TimelineView = ({ grievanceId, onBack }) => {
             </div>
             <div className="timeline">
                 {sortedStages.map((stage, index) => (
-                    <div key={index} className="timeline-item">
+                    <div key={index} className={`timeline-item ${stage.stageName === 'Escalated' ? 'is-escalated' : ''}`} style={{ '--i': index }}>
                         <div className="timeline-icon">
                             {getStageIcon(stage.stageName)}
                         </div>

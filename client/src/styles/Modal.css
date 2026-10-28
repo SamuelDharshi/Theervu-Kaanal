@@ -14,10 +14,10 @@
 
 /* Modal content */
 .modal-content {
-    background-color: white;
+    background-color: var(--surface);
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    box-shadow: none;
     max-width: 500px;
     width: 90%;
     position: relative;
@@ -35,7 +35,7 @@
 .modal-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #333;
+    color: var(--ink);
 }
 
 /* Modal body */
@@ -53,7 +53,7 @@
 /* Modal buttons */
 .modal-button {
     padding: 0.5rem 1rem;
-    border-radius: 4px;
+    border-radius: var(--radius);
     border: none;
     cursor: pointer;
     font-weight: 500;
@@ -61,13 +61,13 @@
 }
 
 .modal-button.cancel {
-    background-color: #6c757d;
-    color: white;
+    background-color: var(--muted);
+    color: var(--surface);
 }
 
 .modal-button.submit {
-    background-color: #ffc107;
-    color: #000;
+    background-color: var(--warn);
+    color: var(--ink);
 }
 
 .modal-button:hover {
@@ -79,8 +79,8 @@
     width: 100%;
     min-height: 100px;
     padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     margin-top: 0.5rem;
     resize: vertical;
 }

@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
-import { Bell, Menu, X, User, Settings, LogOut } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import shield from '../assets/shield.png';
-import UserInfo from './UserInfo';
+import React, { useEffect, useRef, useState } from 'react';
+import { Menu, X, User, Settings, LogOut, LayoutGrid } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import { Dropdown } from 'react-bootstrap';
-import { useTheme } from '../context/ThemeContext';
+import '../styles/NavBar.css';
 
-const NavBar = () => {
+const NavBar = ({ overlay = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
   const { user, logout } = useAuth();
-  const { theme } = useTheme();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      // Slide away while reading down, come back on any scroll up.
+      setHidden(y > 160 && y > lastY.current + 4);
+      if (y < lastY.current - 4 || y < 160) setHidden(false);
+      lastY.current = y;
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => setIsMenuOpen(false), [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isMenuOpen]);
 
   const handleLogout = () => {
     logout();
@@ -66,45 +88,56 @@ const NavBar = () => {
     }
   };
 
+  const links = [
+    { to: '/#journey', label: 'How it works' },
+    { to: '/#track', label: 'Track a petition' },
+    { to: '/about', label: 'About' },
+    { to: '/contact', label: 'Contact' },
+  ];
+
+  const classes = [
+    'tk-nav',
+    overlay ? 'tk-nav--overlay' : '',
+    scrolled ? 'is-scrolled' : '',
+    hidden && !isMenuOpen ? 'is-hidden' : '',
+    isMenuOpen ? 'is-open' : '',
+  ].join(' ');
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
-      <div className="container">
-        <div className="d-flex justify-content-between align-items-center w-100">
-          {/* Logo and Brand */}
-          <Link to="/" className="navbar-brand d-flex align-items-center">
-            <img src={shield} alt="Logo" className="me-2" style={{ height: '30px' }} />
-            <span className="d-none d-sm-inline">TN Theervu Kaanal</span>
+    <>
+      <nav className={classes} aria-label="Main">
+        <div className="tk-nav__inner">
+          <Link to="/" className="tk-nav__brand" aria-label="Theervu-Kaanal home">
+            <span className="tk-nav__mark" aria-hidden="true">
+              <i /><i /><i />
+            </span>
+            <span className="tk-nav__word">Theervu-Kaanal</span>
           </Link>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="navbar-toggler d-lg-none"
-            type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="tk-nav__links">
+            {links.map((l) => (
+              <NavLink key={l.to} to={l.to} className="tk-nav__link">
+                {l.label}
+              </NavLink>
+            ))}
+          </div>
 
-          {/* Desktop and Mobile Menu */}
-          <div className={`collapse navbar-collapse ${isMenuOpen ? 'show' : ''}`}>
-            <div className="d-flex flex-column flex-lg-row align-items-lg-center ms-auto gap-3">
-              {/* Notification Bell for logged-in users */}
-              {user && (
-                <div className="position-relative">
+          <div className="tk-nav__actions">
+            {user ? (
+              <>
+                <div className="tk-nav__bell">
                   <NotificationBell userId={user.id} userRole={user.role} />
                 </div>
-              )}
-
-              {/* User Menu */}
-              {user ? (
-                <Dropdown>
-                  <Dropdown.Toggle variant="transparent" className="text-white border-0 d-flex align-items-center gap-2">
-                    <User size={20} />
+                <Dropdown align="end">
+                  <Dropdown.Toggle variant="transparent" className="tk-nav__user" id="tk-user-menu">
+                    <span className="tk-nav__avatar" aria-hidden="true">
+                      {(user.firstName || user.email || '?').charAt(0).toUpperCase()}
+                    </span>
                     <span className="d-none d-sm-inline">{user.firstName}</span>
                   </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
+                  <Dropdown.Menu>
                     <Dropdown.Item as={Link} to={getDashboardPath()}>
-                      <User size={16} className="me-2" />
+                      <LayoutGrid size={16} className="me-2" />
                       Dashboard
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to={getSettingsPath()}>
@@ -114,21 +147,54 @@ const NavBar = () => {
                     <Dropdown.Divider />
                     <Dropdown.Item onClick={handleLogout}>
                       <LogOut size={16} className="me-2" />
-                      Logout
+                      Log out
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
-              ) : (
-                <div className="d-flex gap-2">
-                  <Link to="/login" className="btn btn-outline-light">Login</Link>
-                  <Link to="/register" className="btn btn-light">Register</Link>
-                </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="tk-nav__link tk-nav__signin">
+                  <User size={16} aria-hidden="true" /> Sign in
+                </Link>
+                <Link to="/register" className="btn btn-primary tk-nav__cta">Register</Link>
+              </>
+            )}
+
+            <button
+              className="tk-nav__toggle"
+              type="button"
+              aria-expanded={isMenuOpen}
+              aria-controls="tk-mobile-menu"
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
         </div>
+      </nav>
+
+      <div id="tk-mobile-menu" className={`tk-sheet ${isMenuOpen ? 'is-open' : ''}`} aria-hidden={!isMenuOpen}>
+        <div className="tk-sheet__links">
+          {links.map((l, i) => (
+            <Link key={l.to} to={l.to} style={{ '--i': i }} tabIndex={isMenuOpen ? 0 : -1}>
+              {l.label}
+            </Link>
+          ))}
+          {user ? (
+            <Link to={getDashboardPath()} style={{ '--i': links.length }} tabIndex={isMenuOpen ? 0 : -1}>
+              Dashboard
+            </Link>
+          ) : (
+            <Link to="/login" style={{ '--i': links.length }} tabIndex={isMenuOpen ? 0 : -1}>
+              Sign in
+            </Link>
+          )}
+        </div>
+        <p className="tk-sheet__foot tk-tamil">தீர்வு காணல்</p>
       </div>
-    </nav>
+    </>
   );
 };
 
