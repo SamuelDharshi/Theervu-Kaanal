@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../shared/Footer";
 import NavBar from "../components/NavBar";
 import { Plus, Eye, MessageCircle, AlertCircle, Clock, ArrowLeft, Star } from "lucide-react";
-import moment from 'moment';
 import ChatComponent from '../components/ChatComponent';
 import TimelineView from '../components/TimelineView';
 import "../styles/Chat.css";
@@ -12,11 +12,13 @@ import { toast } from "react-hot-toast";
 import EscalateModal from '../components/EscalateModal';
 import { API_BASE } from '../config';
 import EngineVerdict from '../components/EngineVerdict';
+import { engineReasons } from '../engine/format';
 
 const PetitionerDashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, authenticatedFetch } = useAuth();
+    const { t, formatDate } = useT();
     const [grievances, setGrievances] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -107,17 +109,17 @@ const PetitionerDashboard = () => {
                 };
                 setStats(stats);
             } else {
-                setError(data.error || 'Failed to fetch grievances');
+                setError(data.error || t('petitioner.fetchFailed'));
             }
         } catch (error) {
             console.error('Error fetching grievances:', error);
             if (error.message === 'No authentication token available') {
-                setError('Your session has expired. Please log in again.');
+                setError(t('common.sessionExpired'));
                 setTimeout(() => {
                     navigate('/login/petitioner');
                 }, 2000);
             } else {
-                setError('Failed to fetch grievances. Please try again later.');
+                setError(t('petitioner.fetchFailed'));
             }
         } finally {
             setLoading(false);
@@ -164,15 +166,15 @@ const PetitionerDashboard = () => {
             const data = await response.json();
 
             if (response.ok) {
-                toast.success('Grievance escalated successfully');
+                toast.success(t('escalate.success'));
                 fetchGrievances(); // Refresh the list
                 setShowEscalateModal(false);
             } else {
-                toast.error(data.error || 'Failed to escalate grievance');
+                toast.error(data.error || t('escalate.failed'));
             }
         } catch (error) {
             console.error('Error escalating grievance:', error);
-            toast.error('Failed to escalate grievance');
+            toast.error(t('escalate.failed'));
         }
     };
 
@@ -189,7 +191,7 @@ const PetitionerDashboard = () => {
 
             // Check if feedback already exists using the updated data
             if (updatedGrievance.feedback && updatedGrievance.feedback.rating) {
-                toast.error('Feedback has already been submitted for this grievance');
+                toast.error(t('feedback.already'));
                 return;
             }
 
@@ -199,26 +201,26 @@ const PetitionerDashboard = () => {
 
         } catch (error) {
             console.error('Error fetching grievance details:', error);
-            toast.error(error.message || 'Failed to fetch grievance details');
+            toast.error(error.message || t('petitioner.detailsFailed'));
         }
     };
 
     const submitFeedback = async () => {
         try {
             if (!selectedGrievanceForFeedback) {
-                toast.error('No grievance selected for feedback');
+                toast.error(t('feedback.noneSelected'));
                 return;
             }
 
             // More robust check for existing feedback
             if (selectedGrievanceForFeedback.feedback && selectedGrievanceForFeedback.feedback.rating) {
-                toast.error('Feedback has already been submitted for this grievance');
+                toast.error(t('feedback.already'));
                 setShowFeedbackModal(false);
                 return;
             }
 
             if (feedbackRating === 0) {
-                toast.error('Please select a rating');
+                toast.error(t('feedback.selectRating'));
                 return;
             }
 
@@ -236,7 +238,7 @@ const PetitionerDashboard = () => {
             const data = await response.json();
 
             if (response.ok) {
-                toast.success('Thank you for your feedback!');
+                toast.success(t('feedback.thanks'));
                 setShowFeedbackModal(false);
                 setFeedbackRating(0);
                 setFeedbackComment('');
@@ -247,7 +249,7 @@ const PetitionerDashboard = () => {
             }
         } catch (error) {
             console.error('Error submitting feedback:', error);
-            toast.error(error.message || 'Failed to submit feedback');
+            toast.error(error.message || t('feedback.failed'));
 
             // Close the modal for any error containing "already submitted"
             if (error.message && error.message.toLowerCase().includes('already submitted')) {
@@ -268,7 +270,7 @@ const PetitionerDashboard = () => {
                 {/* Header Section */}
                 <div className="row mb-4 align-items-center">
                     <div className="col-12 col-md-6">
-                        <h2 className="mb-0">My Grievances</h2>
+                        <h2 className="mb-0">{t('petitioner.title')}</h2>
                     </div>
                     <div className="col-12 col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
                         <button
@@ -276,7 +278,7 @@ const PetitionerDashboard = () => {
                             onClick={() => navigate("/submit-grievance")}
                         >
                             <Plus size={18} className="me-2" />
-                            Submit New Grievance
+                            {t('submit.title')}
                         </button>
                     </div>
                 </div>
@@ -298,7 +300,7 @@ const PetitionerDashboard = () => {
                     <div className="col-12 col-sm-6 col-md-2 mb-3 mb-md-0">
                         <div className="card bg-primary text-white h-100">
                             <div className="card-body">
-                                <h5 className="card-title">Total Grievances</h5>
+                                <h5 className="card-title">{t('petitioner.total')}</h5>
                                 <h2 className="card-text">{stats.total}</h2>
                             </div>
                         </div>
@@ -306,7 +308,7 @@ const PetitionerDashboard = () => {
                     <div className="col-12 col-sm-6 col-md-2 mb-3 mb-md-0">
                         <div className="card bg-warning text-dark h-100">
                             <div className="card-body">
-                                <h5 className="card-title">Pending</h5>
+                                <h5 className="card-title">{t('status.pending')}</h5>
                                 <h2 className="card-text">{stats.pending}</h2>
                             </div>
                         </div>
@@ -314,7 +316,7 @@ const PetitionerDashboard = () => {
                     <div className="col-12 col-sm-6 col-md-2 mb-3 mb-md-0">
                         <div className="card bg-secondary text-white h-100">
                             <div className="card-body">
-                                <h5 className="card-title">Assigned</h5>
+                                <h5 className="card-title">{t('status.assigned')}</h5>
                                 <h2 className="card-text">{stats.assigned}</h2>
                             </div>
                         </div>
@@ -322,7 +324,7 @@ const PetitionerDashboard = () => {
                     <div className="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
                         <div className="card bg-info text-white h-100">
                             <div className="card-body">
-                                <h5 className="card-title">In Progress</h5>
+                                <h5 className="card-title">{t('status.in-progress')}</h5>
                                 <h2 className="card-text">{stats.inProgress}</h2>
                             </div>
                         </div>
@@ -330,7 +332,7 @@ const PetitionerDashboard = () => {
                     <div className="col-12 col-sm-6 col-md-3">
                         <div className="card bg-success text-white h-100">
                             <div className="card-body">
-                                <h5 className="card-title">Resolved</h5>
+                                <h5 className="card-title">{t('status.resolved')}</h5>
                                 <h2 className="card-text">{stats.resolved}</h2>
                             </div>
                         </div>
@@ -345,31 +347,31 @@ const PetitionerDashboard = () => {
                                 className={`btn ${activeTab === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
                                 onClick={() => setActiveTab('all')}
                             >
-                                All
+                                {t('common.all')}
                             </button>
                             <button
                                 className={`btn ${activeTab === 'pending' ? 'btn-primary' : 'btn-outline-primary'}`}
                                 onClick={() => setActiveTab('pending')}
                             >
-                                Pending
+                                {t('status.pending')}
                             </button>
                             <button
                                 className={`btn ${activeTab === 'assigned' ? 'btn-primary' : 'btn-outline-primary'}`}
                                 onClick={() => setActiveTab('assigned')}
                             >
-                                Assigned
+                                {t('status.assigned')}
                             </button>
                             <button
                                 className={`btn ${activeTab === 'in-progress' ? 'btn-primary' : 'btn-outline-primary'}`}
                                 onClick={() => setActiveTab('in-progress')}
                             >
-                                In Progress
+                                {t('status.in-progress')}
                             </button>
                             <button
                                 className={`btn ${activeTab === 'resolved' ? 'btn-primary' : 'btn-outline-primary'}`}
                                 onClick={() => setActiveTab('resolved')}
                             >
-                                Resolved
+                                {t('status.resolved')}
                             </button>
                         </div>
                     </div>
@@ -378,7 +380,8 @@ const PetitionerDashboard = () => {
                             <input
                                 type="text"
                                 className="form-control"
-                                placeholder="Search grievances..."
+                                placeholder={t('petitioner.search')}
+                                aria-label={t('petitioner.search')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -401,18 +404,20 @@ const PetitionerDashboard = () => {
                 {flaggedGrievances.length > 0 && (
                     <section className="tk-flagged mb-4" aria-labelledby="flagged-title">
                         <h2 id="flagged-title">
-                            The escalation engine flagged {flaggedGrievances.length === 1 ? 'one of your petitions' : `${flaggedGrievances.length} of your petitions`}
+                            {flaggedGrievances.length === 1
+                                ? t('petitioner.flaggedOne')
+                                : t('petitioner.flaggedMany', { n: flaggedGrievances.length })}
                         </h2>
-                        <p>You can escalate it to the grievance cell with your reason. The cell answers or reassigns it to another official.</p>
+                        <p>{t('petitioner.flaggedBody')}</p>
                         <ul>
                             {flaggedGrievances.map((g) => (
                                 <li key={g._id}>
                                     <div>
                                         <strong>{g.grievanceId} · {g.title}</strong>
-                                        <span>{(g.engine?.reason || g.escalationReason || '').split('; ').join('. ')}</span>
+                                        <span>{engineReasons(g.engine, t).join(' ') || g.escalationReason}</span>
                                     </div>
                                     <button type="button" className="btn btn-accent" onClick={() => handleEscalate(g)}>
-                                        Escalate
+                                        {t('escalate.action')}
                                     </button>
                                 </li>
                             ))}
@@ -425,15 +430,15 @@ const PetitionerDashboard = () => {
                     <table className="table table-hover">
                         <thead className="table-light">
                             <tr>
-                                <th>Grievance ID</th>
-                                <th>Title</th>
-                                <th>Department</th>
-                                <th>Status</th>
-                                <th>Escalation</th>
-                                <th>Assigned To</th>
-                                <th>Submitted Date</th>
-                                <th>Last Updated</th>
-                                <th>Actions</th>
+                                <th>{t('common.grievanceId')}</th>
+                                <th>{t('form.title')}</th>
+                                <th>{t('common.department')}</th>
+                                <th>{t('common.status')}</th>
+                                <th>{t('petitioner.escalation')}</th>
+                                <th>{t('common.assignedTo')}</th>
+                                <th>{t('petitioner.submitted')}</th>
+                                <th>{t('common.lastUpdate')}</th>
+                                <th>{t('common.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -441,14 +446,14 @@ const PetitionerDashboard = () => {
                                 <tr>
                                     <td colSpan="9" className="text-center py-4">
                                         <div className="spinner-border text-primary" role="status">
-                                            <span className="visually-hidden">Loading...</span>
+                                            <span className="visually-hidden">{t('common.loading')}</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : filteredGrievances.length === 0 ? (
                                 <tr>
                                     <td colSpan="9" className="text-center py-4">
-                                        No grievances found
+                                        {t('common.noGrievances')}
                                     </td>
                                 </tr>
                             ) : (
@@ -456,21 +461,21 @@ const PetitionerDashboard = () => {
                                     <tr key={grievance._id}>
                                         <td>{grievance.grievanceId || 'N/A'}</td>
                                         <td>{grievance.title}</td>
-                                        <td>{grievance.department}</td>
+                                        <td>{t(`dept.${grievance.department}`)}</td>
                                         <td>
                                             <span className={`badge ${getStatusBadgeClass(grievance.status)}`}>
-                                                {grievance.status}
+                                                {t(`status.${grievance.status}`)}
                                             </span>
                                         </td>
                                         <td><EngineVerdict grievance={grievance} compact /></td>
                                         <td>
                                             {grievance.assignedTo ?
                                                 `${grievance.assignedTo.firstName} ${grievance.assignedTo.lastName}` :
-                                                'Not Assigned'
+                                                t('common.notAssigned')
                                             }
                                         </td>
-                                        <td>{moment(grievance.createdAt).format('MMM D, YYYY')}</td>
-                                        <td>{moment(grievance.updatedAt).format('MMM D, YYYY')}</td>
+                                        <td>{formatDate(grievance.createdAt)}</td>
+                                        <td>{formatDate(grievance.updatedAt)}</td>
                                         <td>
                                             <div className="d-flex gap-2">
                                                 {(grievance.status === 'assigned' || grievance.status === 'in-progress') && grievance.assignedTo && (
@@ -479,7 +484,7 @@ const PetitionerDashboard = () => {
                                                         onClick={() => handleViewChat(grievance)}
                                                     >
                                                         <MessageCircle size={16} className="me-1" />
-                                                        Chat
+                                                        {t('common.chat')}
                                                     </button>
                                                 )}
                                                 <button
@@ -490,7 +495,7 @@ const PetitionerDashboard = () => {
                                                     }}
                                                 >
                                                     <Clock size={16} className="me-1" />
-                                                    Timeline
+                                                    {t('common.timeline')}
                                                 </button>
                                                 {grievance.status === 'resolved' && (
                                                     <>
@@ -503,7 +508,7 @@ const PetitionerDashboard = () => {
                                                             disabled={!grievance.resolutionDocument}
                                                         >
                                                             <Eye size={16} className="me-1" />
-                                                            View Resolution
+                                                            {t('petitioner.viewResolution')}
                                                         </button>
                                                         {!grievance.feedback && (
                                                             <button
@@ -511,7 +516,7 @@ const PetitionerDashboard = () => {
                                                                 onClick={() => handleGiveFeedback(grievance)}
                                                             >
                                                                 <Star size={16} className="me-1" />
-                                                                Give Feedback
+                                                                {t('feedback.give')}
                                                             </button>
                                                         )}
                                                     </>
@@ -521,7 +526,7 @@ const PetitionerDashboard = () => {
                                                         className="btn btn-warning btn-sm"
                                                         onClick={() => handleEscalate(grievance)}
                                                     >
-                                                        Escalate
+                                                        {t('escalate.action')}
                                                     </button>
                                                 )}
                                             </div>
@@ -540,7 +545,7 @@ const PetitionerDashboard = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title">
-                                        Timeline - Grievance {selectedGrievance.grievanceId}
+                                        {t('common.timeline')} · {selectedGrievance.grievanceId}
                                     </h5>
                                     <button
                                         type="button"
@@ -583,7 +588,7 @@ const PetitionerDashboard = () => {
                                             <ArrowLeft size={24} />
                                         </button>
                                         <h5 className="modal-title mb-0">
-                                            Chat - Grievance {selectedGrievance.grievanceId}
+                                            {t('common.chat')} · {selectedGrievance.grievanceId}
                                         </h5>
                                     </div>
                                 </div>
@@ -605,7 +610,7 @@ const PetitionerDashboard = () => {
                         <div className="modal-dialog modal-lg">
                             <div className="modal-content">
                                 <div className="modal-header">
-                                    <h5 className="modal-title">Resolution Document</h5>
+                                    <h5 className="modal-title">{t('petitioner.resolutionDoc')}</h5>
                                     <button
                                         type="button"
                                         className="btn-close"
@@ -625,11 +630,11 @@ const PetitionerDashboard = () => {
                                                 className="btn btn-primary"
                                             >
                                                 <Eye size={16} className="me-2" />
-                                                View Resolution Document
+                                                {t('petitioner.viewResolutionDoc')}
                                             </a>
                                         </div>
                                     ) : (
-                                        <p className="text-center text-muted">No resolution document available</p>
+                                        <p className="text-center text-muted">{t('petitioner.noResolutionDoc')}</p>
                                     )}
                                 </div>
                             </div>
@@ -656,7 +661,7 @@ const PetitionerDashboard = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title">
-                                        Give Feedback - Grievance {selectedGrievanceForFeedback.grievanceId}
+                                        {t('feedback.give')} · {selectedGrievanceForFeedback.grievanceId}
                                     </h5>
                                     <button
                                         type="button"
@@ -669,14 +674,14 @@ const PetitionerDashboard = () => {
                                 </div>
                                 <div className="modal-body">
                                     <div className="mb-3">
-                                        <label htmlFor="feedbackRating" className="form-label">Rating</label>
+                                        <label htmlFor="feedbackRating" className="form-label">{t('feedback.rating')}</label>
                                         <select
                                             id="feedbackRating"
                                             className="form-select"
                                             value={feedbackRating}
                                             onChange={(e) => setFeedbackRating(Number(e.target.value))}
                                         >
-                                            <option value={0}>Select a rating</option>
+                                            <option value={0}>{t('feedback.selectRating')}</option>
                                             <option value={1}>1</option>
                                             <option value={2}>2</option>
                                             <option value={3}>3</option>
@@ -685,7 +690,7 @@ const PetitionerDashboard = () => {
                                         </select>
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="feedbackComment" className="form-label">Comment</label>
+                                        <label htmlFor="feedbackComment" className="form-label">{t('feedback.comment')}</label>
                                         <textarea
                                             id="feedbackComment"
                                             className="form-control"
@@ -704,14 +709,14 @@ const PetitionerDashboard = () => {
                                             setSelectedGrievanceForFeedback(null);
                                         }}
                                     >
-                                        Cancel
+                                        {t('common.cancel')}
                                     </button>
                                     <button
                                         type="button"
                                         className="btn btn-primary"
                                         onClick={submitFeedback}
                                     >
-                                        Submit Feedback
+                                        {t('feedback.submit')}
                                     </button>
                                 </div>
                             </div>

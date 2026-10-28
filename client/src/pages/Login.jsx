@@ -2,37 +2,41 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
+import { useT } from '../i18n/LanguageContext';
 
 const ROLES = [
-  { to: '/login/petitioner', name: 'Petitioner', desc: 'File a grievance, track it, chat with the official, rate the fix.' },
-  { to: '/login/official', name: 'Department official', desc: 'Work the queue routed to your jurisdiction in Water, RTO or Electricity.' },
-  { to: '/login/admin', name: 'Grievance cell', desc: 'Answer escalations, read analytics, ask Smart Query.', accent: true },
+  { to: '/login/petitioner', key: 'petitioner' },
+  { to: '/login/official', key: 'official' },
+  { to: '/login/admin', key: 'admin', accent: true },
 ];
 
-const Login = () => (
-  <AuthShell
-    role="Three desks, one record"
-    title="Who is signing in?"
-    lede="Every petition passes through the same timeline. Pick the desk you work from."
-    back="/"
-    backLabel="Home"
-  >
-    <ul className="tk-choices">
-      {ROLES.map((r, i) => (
-        <li key={r.to}>
-          <Link to={r.to} className={`tk-choice ${r.accent ? 'tk-choice--accent' : ''}`} style={{ '--i': i }}>
-            <span className="tk-choice__name">{r.name}</span>
-            <span className="tk-choice__desc">{r.desc}</span>
-            <ArrowRight className="tk-choice__go" size={26} aria-hidden="true" />
-          </Link>
-        </li>
-      ))}
-    </ul>
-    <p className="tk-auth__alt">
-      No account yet? <Link to="/register">Register</Link>. Only want to check a petition?{' '}
-      <Link to="/#track">Track it without signing in</Link>.
-    </p>
-  </AuthShell>
-);
+const Login = () => {
+  const { t } = useT();
+  return (
+    <AuthShell
+      role={t('login.role')}
+      title={t('login.title')}
+      lede={t('login.lede')}
+      back="/"
+      backLabel={t('common.home')}
+    >
+      <ul className="tk-choices">
+        {ROLES.map((r, i) => (
+          <li key={r.to}>
+            <Link to={r.to} className={`tk-choice ${r.accent ? 'tk-choice--accent' : ''}`} style={{ '--i': i }}>
+              <span className="tk-choice__name">{t(`roles.${r.key}`)}</span>
+              <span className="tk-choice__desc">{t(`login.desc.${r.key}`)}</span>
+              <ArrowRight className="tk-choice__go" size={26} aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p className="tk-auth__alt">
+        {t('login.noAccount')} <Link to="/register">{t('nav.register')}</Link>. {t('login.onlyCheck')}{' '}
+        <Link to="/#track">{t('login.trackWithout')}</Link>.
+      </p>
+    </AuthShell>
+  );
+};
 
 export default Login;

@@ -1,10 +1,12 @@
 import React from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { Nav } from 'react-bootstrap';
 import { LayoutDashboard, AlertTriangle, Database, Settings, LogOut, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminSidebar = ({ activeTab, onTabChange }) => {
     const navigate = useNavigate();
+    const { t } = useT();
 
     const handleNavigation = (path) => {
         switch (path) {
@@ -37,7 +39,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
             paddingTop: '1rem'
         }}>
             <div className="px-3 py-2 mb-4">
-                <h5 className="mb-0 text-white">Admin Panel</h5>
+                <h5 className="mb-0 text-white">{t('admin.panel')}</h5>
             </div>
 
             <Nav className="flex-column">
@@ -47,7 +49,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                     style={{ cursor: 'pointer' }}
                 >
                     <LayoutDashboard size={20} className="me-2" />
-                    <span>Dashboard</span>
+                    <span>{t('nav.dashboard')}</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -56,7 +58,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                     style={{ cursor: 'pointer' }}
                 >
                     <AlertTriangle size={20} className="me-2" />
-                    <span>Escalated Cases</span>
+                    <span>{t('admin.escalatedCases')}</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -65,7 +67,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                     style={{ cursor: 'pointer' }}
                 >
                     <Database size={20} className="me-2" />
-                    <span>Resource Management</span>
+                    <span>{t('admin.resources')}</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -74,7 +76,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                     style={{ cursor: 'pointer' }}
                 >
                     <MessageSquare size={20} className="me-2" />
-                    <span>Smart Query</span>
+                    <span>{t('admin.smartQuery')}</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -83,7 +85,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                     style={{ cursor: 'pointer' }}
                 >
                     <Settings size={20} className="me-2" />
-                    <span>Settings</span>
+                    <span>{t('nav.settings')}</span>
                 </Nav.Link>
 
                 <div className="mt-auto">
@@ -93,7 +95,7 @@ const AdminSidebar = ({ activeTab, onTabChange }) => {
                         style={{ cursor: 'pointer' }}
                     >
                         <LogOut size={20} className="me-2" />
-                        <span>Logout</span>
+                        <span>{t('nav.logout')}</span>
                     </Nav.Link>
                 </div>
             </Nav>

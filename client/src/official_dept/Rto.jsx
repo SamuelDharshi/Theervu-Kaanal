@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WaterBoard.css";
 import { useAuth } from "../context/AuthContext";
+import { useT } from '../i18n/LanguageContext';
 import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaCheckCircle, FaClock, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import ChatComponent from '../components/ChatComponent';
@@ -14,6 +15,7 @@ import { API_BASE } from '../config';
 const RtoDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t, formatDate } = useT();
   const [email, setEmail] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,23 +134,23 @@ const RtoDashboard = () => {
     if (hasHighPriority) {
       return {
         priority: 'High',
-        explanation: 'This grievance requires immediate attention due to potential safety hazards or critical traffic issues.',
-        impactAssessment: 'High impact on public safety and transportation services. Immediate action required.',
-        recommendedResponseTime: '24-48 hours'
+        explanation: t('official.analysis.RTO.high.explanation'),
+        impactAssessment: t('official.analysis.RTO.high.impact'),
+        recommendedResponseTime: t('official.analysis.highTime')
       };
     } else if (hasMediumPriority) {
       return {
         priority: 'Medium',
-        explanation: 'This grievance needs attention but is not critical.',
-        impactAssessment: 'Moderate impact on transportation services. Action required within standard timeframe.',
-        recommendedResponseTime: '3-5 working days'
+        explanation: t('official.analysis.RTO.medium.explanation'),
+        impactAssessment: t('official.analysis.RTO.medium.impact'),
+        recommendedResponseTime: t('official.analysis.mediumTime')
       };
     } else {
       return {
         priority: 'Low',
-        explanation: 'This is a routine grievance that can be handled through standard procedures.',
-        impactAssessment: 'Limited impact on transportation services. Can be addressed through regular processing.',
-        recommendedResponseTime: '7-10 working days'
+        explanation: t('official.analysis.RTO.low.explanation'),
+        impactAssessment: t('official.analysis.RTO.low.impact'),
+        recommendedResponseTime: t('official.analysis.lowTime')
       };
     }
   };
@@ -208,7 +210,7 @@ const RtoDashboard = () => {
 
           return {
             ...grievance,
-            grievanceId: grievance.petitionId || grievance.grievanceId || 'N/A',
+            grievanceId: grievance.petitionId || grievance.grievanceId || t('common.na'),
             title: grievance.title || 'No Title',
             description: grievance.description || 'No Description',
             createdAt: grievance.createdAt || new Date().toISOString(),
@@ -225,7 +227,7 @@ const RtoDashboard = () => {
           const localPriorityData = analyzePriorityLocally(grievance);
           return {
             ...grievance,
-            grievanceId: grievance.petitionId || grievance.grievanceId || 'N/A',
+            grievanceId: grievance.petitionId || grievance.grievanceId || t('common.na'),
             title: grievance.title || 'No Title',
             description: grievance.description || 'No Description',
             createdAt: grievance.createdAt || new Date().toISOString(),
@@ -276,17 +278,17 @@ const RtoDashboard = () => {
 
       if (!response.ok) throw new Error('Failed to accept grievance');
 
-      toast.success('Grievance accepted successfully');
+      toast.success(t('official.accepted'));
       fetchGrievances();
     } catch (error) {
       console.error('Error accepting grievance:', error);
-      toast.error('Failed to accept grievance');
+      toast.error(t('official.acceptFailed'));
     }
   };
 
   const handleDeclineGrievance = async (grievanceId) => {
     if (!declineReason.trim()) {
-      toast.error('Please provide a reason for declining');
+      toast.error(t('official.declineReasonRequired'));
       return;
     }
 
@@ -309,13 +311,13 @@ const RtoDashboard = () => {
         throw new Error('Failed to decline grievance');
       }
 
-      toast.success('Grievance declined successfully');
+      toast.success(t('official.declined'));
       setShowDeclineModal(false);
       setDeclineReason('');
       fetchGrievances();
     } catch (error) {
       console.error('Error declining grievance:', error);
-      toast.error('Failed to decline grievance');
+      toast.error(t('official.declineFailed'));
     }
   };
 
@@ -367,22 +369,22 @@ const RtoDashboard = () => {
           const resolveData = await resolveResponse.json();
 
           if (!resolveResponse.ok) {
-            throw new Error(resolveData.error || 'Failed to resolve grievance');
+            throw new Error(resolveData.error || t('official.resolveFailed'));
           }
 
           // Refresh the grievances list
           fetchGrievances();
-          toast.success('Grievance resolved successfully');
+          toast.success(t('official.resolved'));
         } catch (error) {
           console.error('Error in file upload:', error);
-          toast.error(error.message || 'Failed to upload and resolve grievance');
+          toast.error(error.message || t('official.resolveFailed'));
         }
       };
 
       fileInput.click();
     } catch (error) {
       console.error('Error resolving grievance:', error);
-      toast.error(error.message || 'Failed to resolve grievance');
+      toast.error(error.message || t('official.resolveFailed'));
     }
   };
 
@@ -408,12 +410,12 @@ const RtoDashboard = () => {
       if (!response.ok) throw new Error('Failed to submit resource management');
 
       setShowResourceModal(false);
-      toast.success('Resource management details submitted successfully');
+      toast.success(t('official.resourceSaved'));
 
       fetchGrievances();
     } catch (error) {
       console.error('Error submitting resource management:', error);
-      toast.error('Failed to submit resource management details');
+      toast.error(t('official.resourceFailed'));
     }
   };
 
@@ -440,11 +442,11 @@ const RtoDashboard = () => {
         endDate: '',
         milestones: [{ description: '', date: '' }]
       });
-      toast.success('Timeline submitted successfully');
+      toast.success(t('official.timelineSaved'));
       fetchGrievances();
     } catch (error) {
       console.error('Error submitting timeline:', error);
-      toast.error('Failed to submit timeline');
+      toast.error(t('official.timelineFailed'));
     }
   };
 
@@ -489,11 +491,11 @@ const RtoDashboard = () => {
 
       setShowAssignModal(false);
       setAssignedTo('');
-      toast.success('Grievance assigned successfully');
+      toast.success(t('official.assigned'));
       fetchGrievances();
     } catch (error) {
       console.error('Error assigning grievance:', error);
-      toast.error('Failed to assign grievance');
+      toast.error(t('official.assignFailed'));
     }
   };
 
@@ -514,7 +516,7 @@ const RtoDashboard = () => {
       setAssignedOfficers(data);
     } catch (error) {
       console.error('Error fetching officers:', error);
-      toast.error('Failed to fetch officers');
+      toast.error(t('admin.officialsFailed'));
     }
   };
 
@@ -525,7 +527,7 @@ const RtoDashboard = () => {
         <div className="modal-content">
           <div className="modal-header">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Grievance Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('official.details')}</h2>
               <p className="text-sm text-gray-500 mt-1">ID: {selectedGrievance.grievanceId}</p>
             </div>
             <button
@@ -539,26 +541,26 @@ const RtoDashboard = () => {
           <div className="modal-body space-y-6">
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Priority Analysis</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('official.priorityAnalysis')}</h3>
                 <span className={getPriorityBadgeClass(selectedGrievance.priority)}>
-                  {selectedGrievance.priority || 'Not set'}
+                  {selectedGrievance.priority ? t(`priority.${selectedGrievance.priority}`) : t('common.na')}
                 </span>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.priorityExplanation || 'Priority explanation not available'}
+                {selectedGrievance.priorityExplanation || t('official.noExplanation')}
               </p>
             </div>
 
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Location Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.location')}</h3>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.location || 'Location details not available'}
+                {selectedGrievance.location || t('official.noLocation')}
               </p>
             </div>
 
             {selectedGrievance.assignedTo && (
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Assigned Personnel</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.personnel')}</h3>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <FaUser className="text-blue-600" size={24} />
@@ -579,7 +581,7 @@ const RtoDashboard = () => {
               onClick={() => setShowDetails(false)}
               className="btn btn-secondary"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
@@ -601,7 +603,7 @@ const RtoDashboard = () => {
             <div className="flex items-center gap-3 mb-2">
               <h3 className="text-xl font-semibold text-gray-900">{grievance.title}</h3>
               <span className={getPriorityBadgeClass(grievance.priority)}>
-                {grievance.priority || 'Not set'}
+                {grievance.priority ? t(`priority.${grievance.priority}`) : t('common.na')}
               </span>
               <RepeatedCaseIndicator
                 currentGrievance={grievance}
@@ -614,11 +616,11 @@ const RtoDashboard = () => {
                 <span className="font-medium">ID:</span> {grievance.grievanceId}
               </p>
               <p className="flex items-center gap-2">
-                <span className="font-medium">Created:</span> {new Date(grievance.createdAt).toLocaleDateString()}
+                <span className="font-medium">{t('common.filed')}:</span> {formatDate(grievance.createdAt)}
               </p>
               <p className="flex items-center gap-2">
-                <span className="font-medium">Status:</span>
-                <span className={getStatusBadgeClass(grievance.status)}>{grievance.status}</span>
+                <span className="font-medium">{t('common.status')}:</span>
+                <span className={getStatusBadgeClass(grievance.status)}>{t(`status.${grievance.status}`)}</span>
               </p>
             </div>
           </div>
@@ -630,14 +632,14 @@ const RtoDashboard = () => {
               }}
               className="btn btn-primary"
             >
-              <FaEye className="mr-2" /> View Details
+              <FaEye className="mr-2" /> {t('official.viewDetails')}
             </button>
             {(activeTab === 'assigned' || activeTab === 'inProgress') && !grievance.isResolved && (
               <button
                 onClick={() => handleViewChat(grievance)}
                 className="btn btn-secondary"
               >
-                <FaComments className="mr-2" /> Chat
+                <FaComments className="mr-2" /> {t('common.chat')}
               </button>
             )}
           </div>
@@ -650,7 +652,7 @@ const RtoDashboard = () => {
                 onClick={() => handleAccept(grievance._id)}
                 className="btn btn-success"
               >
-                <FaCheck className="mr-2" /> Accept
+                <FaCheck className="mr-2" /> {t('official.accept')}
               </button>
               <button
                 onClick={() => {
@@ -659,7 +661,7 @@ const RtoDashboard = () => {
                 }}
                 className="btn btn-danger"
               >
-                <FaTimes className="mr-2" /> Decline
+                <FaTimes className="mr-2" /> {t('official.decline')}
               </button>
             </>
           )}
@@ -671,7 +673,7 @@ const RtoDashboard = () => {
               }}
               className="btn btn-primary"
             >
-              <FaTools className="mr-2" /> Resource Management
+              <FaTools className="mr-2" /> {t('official.resourceTitle')}
             </button>
           )}
           {activeTab === 'inProgress' && (
@@ -683,13 +685,13 @@ const RtoDashboard = () => {
                 }}
                 className="btn btn-primary"
               >
-                <FaClock className="mr-2" /> Update Timeline
+                <FaClock className="mr-2" /> {t('official.updateTimeline')}
               </button>
               <button
                 onClick={() => handleResolveGrievance(grievance._id)}
                 className="btn btn-success"
               >
-                <FaCheckCircle className="mr-2" /> Mark as Resolved
+                <FaCheckCircle className="mr-2" /> {t('official.markResolved')}
               </button>
             </>
           )}
@@ -703,9 +705,9 @@ const RtoDashboard = () => {
       {/* Header */}
       <div className="department-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
-          <h2 className="mb-0">RTO Department</h2>
+          <h2 className="mb-0">{t('official.deptTitle', { dept: t('dept.RTO') })}</h2>
           <span className="badge bg-info ms-2">
-            Jurisdiction: {user?.taluk || 'N/A'}, {user?.district || 'N/A'}, {user?.division || 'N/A'}
+            {t('official.jurisdiction')}: {user?.taluk || t('common.na')}, {user?.district || t('common.na')}, {user?.division || t('common.na')}
           </span>
         </div>
         <div className="d-flex align-items-center gap-3">
@@ -724,12 +726,12 @@ const RtoDashboard = () => {
             <Dropdown.Toggle variant="light" className="d-flex align-items-center">
               <FaUser className="me-2" />
               {email}
-              <span className="badge bg-secondary ms-2">RTO</span>
+              <span className="badge bg-secondary ms-2">{t('dept.RTO')}</span>
             </Dropdown.Toggle>
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => navigate('/official-dashboard/rto/settings')}>
                 <FaTools className="me-2" />
-                Settings
+                {t('nav.settings')}
               </Dropdown.Item>
               <Dropdown.Divider />
               <Dropdown.Item onClick={() => {
@@ -737,7 +739,7 @@ const RtoDashboard = () => {
                 navigate('/login');
               }} className="text-danger">
                 <FaSignOutAlt className="me-2" />
-                Logout
+                {t('nav.logout')}
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
@@ -753,7 +755,7 @@ const RtoDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("pending")}>
                 <div className={`card ${activeTab === "pending" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Pending</h5>
+                    <h5 className="card-title">{t('status.pending')}</h5>
                     <h2 className="card-text">{stats.pending}</h2>
                   </div>
                 </div>
@@ -763,7 +765,7 @@ const RtoDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("assigned")}>
                 <div className={`card ${activeTab === "assigned" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Assigned</h5>
+                    <h5 className="card-title">{t('status.assigned')}</h5>
                     <h2 className="card-text">{stats.assigned}</h2>
                   </div>
                 </div>
@@ -773,7 +775,7 @@ const RtoDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("inProgress")}>
                 <div className={`card ${activeTab === "inProgress" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">In Progress</h5>
+                    <h5 className="card-title">{t('status.in-progress')}</h5>
                     <h2 className="card-text">{stats.inProgress}</h2>
                   </div>
                 </div>
@@ -783,7 +785,7 @@ const RtoDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("resolved")}>
                 <div className={`card ${activeTab === "resolved" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Resolved</h5>
+                    <h5 className="card-title">{t('status.resolved')}</h5>
                     <h2 className="card-text">{stats.resolved}</h2>
                   </div>
                 </div>
@@ -803,7 +805,7 @@ const RtoDashboard = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search grievances..."
+                  placeholder={t('petitioner.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -815,10 +817,10 @@ const RtoDashboard = () => {
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
-                <option value="">All Priorities</option>
-                <option value="High">High Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="Low">Low Priority</option>
+                <option value="">{t('official.allPriorities')}</option>
+                <option value="High">{t('official.highPriority')}</option>
+                <option value="Medium">{t('official.mediumPriority')}</option>
+                <option value="Low">{t('official.lowPriority')}</option>
               </select>
             </div>
           </div>
@@ -827,7 +829,7 @@ const RtoDashboard = () => {
         <div className="content-area">
           <main className="main-content w-100">
             <div className="page-header">
-              <h1>Grievances</h1>
+              <h1>{t('official.grievances')}</h1>
             </div>
 
             <div className="tab-container">
@@ -836,37 +838,37 @@ const RtoDashboard = () => {
                   className={`tab ${activeTab === "pending" ? "active" : ""}`}
                   onClick={() => setActiveTab("pending")}
                 >
-                  Pending
+                  {t('status.pending')}
                 </button>
                 <button
                   className={`tab ${activeTab === "assigned" ? "active" : ""}`}
                   onClick={() => setActiveTab("assigned")}
                 >
-                  Assigned
+                  {t('status.assigned')}
                 </button>
                 <button
                   className={`tab ${activeTab === "inProgress" ? "active" : ""}`}
                   onClick={() => setActiveTab("inProgress")}
                 >
-                  In Progress
+                  {t('status.in-progress')}
                 </button>
                 <button
                   className={`tab ${activeTab === "resolved" ? "active" : ""}`}
                   onClick={() => setActiveTab("resolved")}
                 >
-                  Resolved
+                  {t('status.resolved')}
                 </button>
               </div>
             </div>
 
             <div className="grievances-container">
               {loading ? (
-                <div className="loading">Loading...</div>
+                <div className="loading">{t('common.loading')}</div>
               ) : error ? (
                 <div className="error">{error}</div>
               ) : filteredGrievances.length === 0 ? (
                 <div className="no-grievances">
-                  <h4>No grievances found</h4>
+                  <h4>{t('common.noGrievances')}</h4>
                 </div>
               ) : (
                 filteredGrievances.map(renderGrievanceCard)
@@ -878,14 +880,14 @@ const RtoDashboard = () => {
         {showDeclineModal && selectedGrievance && (
           <div className="modal">
             <div className="modal-content">
-              <h3>Decline Grievance</h3>
-              <p>Please provide a reason for declining this grievance:</p>
+              <h3>{t('official.declineTitle')}</h3>
+              <p>{t('official.declineReasonLabel')}</p>
               <textarea
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 className="form-control mb-3"
                 rows="4"
-                placeholder="Enter reason for declining..."
+                placeholder={t('official.declinePlaceholder')}
               />
               <div className="modal-actions">
                 <button
@@ -895,14 +897,14 @@ const RtoDashboard = () => {
                   }}
                   className="btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={() => handleDeclineGrievance(selectedGrievance._id)}
                   className="btn btn-danger"
                   disabled={!declineReason.trim()}
                 >
-                  Decline
+                  {t('official.decline')}
                 </button>
               </div>
             </div>
@@ -912,13 +914,13 @@ const RtoDashboard = () => {
         {showResourceModal && selectedGrievance && (
           <div className="modal">
             <div className="modal-content">
-              <h3>Resource Management</h3>
+              <h3>{t('official.resourceTitle')}</h3>
               <form onSubmit={(e) => {
                 e.preventDefault();
                 handleResourceSubmit(selectedGrievance._id);
               }}>
                 <div className="form-group">
-                  <label>Start Date</label>
+                  <label>{t('resource.startDate')}</label>
                   <input
                     type="date"
                     value={resourceForm.startDate}
@@ -927,7 +929,7 @@ const RtoDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>End Date</label>
+                  <label>{t('resource.endDate')}</label>
                   <input
                     type="date"
                     value={resourceForm.endDate}
@@ -936,16 +938,16 @@ const RtoDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Requirements Needed</label>
+                  <label>{t('resource.requirements')}</label>
                   <textarea
                     value={resourceForm.requirementsNeeded}
                     onChange={(e) => setResourceForm(prev => ({ ...prev, requirementsNeeded: e.target.value }))}
                     required
-                    placeholder="List all requirements"
+                    placeholder={t('official.requirementsPlaceholder')}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Funds Required (₹)</label>
+                  <label>{t('resource.fundsRupees')}</label>
                   <input
                     type="number"
                     value={resourceForm.fundsRequired}
@@ -955,16 +957,16 @@ const RtoDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Resources Required</label>
+                  <label>{t('resource.materials')}</label>
                   <textarea
                     value={resourceForm.resourcesRequired}
                     onChange={(e) => setResourceForm(prev => ({ ...prev, resourcesRequired: e.target.value }))}
                     required
-                    placeholder="List all resources"
+                    placeholder={t('official.resourcesPlaceholder')}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Manpower Needed</label>
+                  <label>{t('resource.manpower')}</label>
                   <input
                     type="number"
                     value={resourceForm.manpowerNeeded}
@@ -975,10 +977,10 @@ const RtoDashboard = () => {
                 </div>
                 <div className="modal-actions">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowResourceModal(false)}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Submit
+                    {t('common.submit')}
                   </button>
                 </div>
               </form>
@@ -989,19 +991,19 @@ const RtoDashboard = () => {
         {showAssignModal && selectedGrievance && (
           <div className="modal">
             <div className="modal-content">
-              <h3>Assign Grievance</h3>
+              <h3>{t('official.assignTitle')}</h3>
               <form onSubmit={(e) => {
                 e.preventDefault();
                 handleAssign(selectedGrievance._id);
               }}>
                 <div className="form-group">
-                  <label>Assign To</label>
+                  <label>{t('official.assignTo')}</label>
                   <select
                     value={assignedTo}
                     onChange={(e) => setAssignedTo(e.target.value)}
                     required
                   >
-                    <option value="">Select Officer</option>
+                    <option value="">{t('admin.selectOfficial')}</option>
                     {assignedOfficers.map(officer => (
                       <option key={officer._id} value={officer._id}>
                         {officer.name}
@@ -1011,10 +1013,10 @@ const RtoDashboard = () => {
                 </div>
                 <div className="modal-actions">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowAssignModal(false)}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Assign
+                    {t('official.assign')}
                   </button>
                 </div>
               </form>
@@ -1025,10 +1027,10 @@ const RtoDashboard = () => {
         {showTimelineModal && selectedGrievance && (
           <div className="modal">
             <div className="modal-content">
-              <h3>Add Timeline</h3>
+              <h3>{t('official.addTimeline')}</h3>
               <form onSubmit={handleTimelineSubmit}>
                 <div className="form-group">
-                  <label>Start Date</label>
+                  <label>{t('resource.startDate')}</label>
                   <input
                     type="date"
                     value={timelineForm.startDate}
@@ -1037,7 +1039,7 @@ const RtoDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>End Date</label>
+                  <label>{t('resource.endDate')}</label>
                   <input
                     type="date"
                     value={timelineForm.endDate}
@@ -1046,12 +1048,12 @@ const RtoDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Milestones</label>
+                  <label>{t('official.milestones')}</label>
                   {timelineForm.milestones.map((milestone, index) => (
                     <div key={index} className="milestone-group">
                       <input
                         type="text"
-                        placeholder="Milestone Description"
+                        placeholder={t('official.milestoneDescription')}
                         value={milestone.description}
                         onChange={(e) => updateMilestone(index, 'description', e.target.value)}
                         required
@@ -1068,7 +1070,7 @@ const RtoDashboard = () => {
                           className="btn btn-danger"
                           onClick={() => removeMilestone(index)}
                         >
-                          Remove
+                          {t('official.remove')}
                         </button>
                       )}
                     </div>
@@ -1078,15 +1080,15 @@ const RtoDashboard = () => {
                     className="btn btn-secondary"
                     onClick={addMilestone}
                   >
-                    Add Milestone
+                    {t('official.addMilestone')}
                   </button>
                 </div>
                 <div className="modal-actions">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowTimelineModal(false)}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Submit Timeline
+                    {t('official.submitTimeline')}
                   </button>
                 </div>
               </form>

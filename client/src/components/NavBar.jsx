@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import { Dropdown } from 'react-bootstrap';
 import '../styles/NavBar.css';
+import { useT } from '../i18n/LanguageContext';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
 
 const NavBar = ({ overlay = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +16,7 @@ const NavBar = ({ overlay = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { t } = useT();
 
   useEffect(() => {
     const onScroll = () => {
@@ -89,11 +92,11 @@ const NavBar = ({ overlay = false }) => {
   };
 
   const links = [
-    { to: '/#engine', label: 'Escalation engine' },
-    { to: '/#journey', label: 'How it works' },
-    { to: '/#track', label: 'Track a petition' },
-    { to: '/about', label: 'About' },
-    { to: '/contact', label: 'Contact' },
+    { to: '/#engine', label: t('nav.engine') },
+    { to: '/#journey', label: t('nav.howItWorks') },
+    { to: '/#track', label: t('nav.track') },
+    { to: '/about', label: t('nav.about') },
+    { to: '/contact', label: t('nav.contact') },
   ];
 
   const classes = [
@@ -106,9 +109,9 @@ const NavBar = ({ overlay = false }) => {
 
   return (
     <>
-      <nav className={classes} aria-label="Main">
+      <nav className={classes} aria-label={t('nav.main')}>
         <div className="tk-nav__inner">
-          <Link to="/" className="tk-nav__brand" aria-label="Theervu-Kaanal home">
+          <Link to="/" className="tk-nav__brand" aria-label={t('nav.home')}>
             <span className="tk-nav__mark" aria-hidden="true">
               <i /><i /><i />
             </span>
@@ -124,6 +127,7 @@ const NavBar = ({ overlay = false }) => {
           </div>
 
           <div className="tk-nav__actions">
+            <LanguageSwitcher className="tk-nav__lang" />
             {user ? (
               <>
                 <div className="tk-nav__bell">
@@ -139,16 +143,16 @@ const NavBar = ({ overlay = false }) => {
                   <Dropdown.Menu>
                     <Dropdown.Item as={Link} to={getDashboardPath()}>
                       <LayoutGrid size={16} className="me-2" />
-                      Dashboard
+                      {t('nav.dashboard')}
                     </Dropdown.Item>
                     <Dropdown.Item as={Link} to={getSettingsPath()}>
                       <Settings size={16} className="me-2" />
-                      Settings
+                      {t('nav.settings')}
                     </Dropdown.Item>
                     <Dropdown.Divider />
                     <Dropdown.Item onClick={handleLogout}>
                       <LogOut size={16} className="me-2" />
-                      Log out
+                      {t('nav.logout')}
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -156,9 +160,9 @@ const NavBar = ({ overlay = false }) => {
             ) : (
               <>
                 <Link to="/login" className="tk-nav__link tk-nav__signin">
-                  <User size={16} aria-hidden="true" /> Sign in
+                  <User size={16} aria-hidden="true" /> {t('nav.signIn')}
                 </Link>
-                <Link to="/register" className="btn btn-primary tk-nav__cta">Register</Link>
+                <Link to="/register" className="btn btn-primary tk-nav__cta">{t('nav.register')}</Link>
               </>
             )}
 
@@ -167,7 +171,7 @@ const NavBar = ({ overlay = false }) => {
               type="button"
               aria-expanded={isMenuOpen}
               aria-controls="tk-mobile-menu"
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={isMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -185,14 +189,15 @@ const NavBar = ({ overlay = false }) => {
           ))}
           {user ? (
             <Link to={getDashboardPath()} style={{ '--i': links.length }} tabIndex={isMenuOpen ? 0 : -1}>
-              Dashboard
+              {t('nav.dashboard')}
             </Link>
           ) : (
             <Link to="/login" style={{ '--i': links.length }} tabIndex={isMenuOpen ? 0 : -1}>
-              Sign in
+              {t('nav.signIn')}
             </Link>
           )}
         </div>
+        <LanguageSwitcher className="tk-sheet__lang" />
         <p className="tk-sheet__foot tk-tamil">தீர்வு காணல்</p>
       </div>
     </>

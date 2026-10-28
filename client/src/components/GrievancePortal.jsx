@@ -11,79 +11,30 @@ import EscalationClock from '../landing/EscalationClock';
 import EngineSection from '../landing/EngineSection';
 import { gsap, ScrollTrigger, prefersReducedMotion, scrollToTarget, startSmoothScroll } from '../motion/smoothScroll';
 import '../styles/Landing.css';
+import { useT } from '../i18n/LanguageContext';
 
+// Copy lives in the i18n dictionaries under landing.*; these are the structure.
 const JOURNEY = [
-  {
-    key: 'filed',
-    stage: 'Grievance Filed',
-    title: 'The citizen says what and where.',
-    body: 'Pick the department, then district, division and taluk. The system matches them to the official for that jurisdiction, so the petition lands on the right desk the moment it is filed.',
-    fact: 'Auto-assigned by department and taluk',
-  },
-  {
-    key: 'review',
-    stage: 'Under Review',
-    title: 'Priority is read, not guessed.',
-    body: 'Each petition is ranked High, Medium or Low from what it says: Gemini when a key is set, department keyword rules otherwise. The rank sets the escalation engine’s clock. The official accepts or declines.',
-    fact: 'Line weight in the field is priority',
-  },
-  {
-    key: 'investigation',
-    stage: 'Investigation',
-    title: 'The plan is public.',
-    body: 'The official starts progress, logs funds, manpower, materials and dates, and plans a timeline with milestones. A case can be reassigned to the next taluk’s officer. The citizen sees the plan on the tracking page.',
-    fact: 'Resources captured per case',
-  },
-  {
-    key: 'escalated',
-    stage: 'Escalated',
-    title: 'Stalls are caught at noon.',
-    body: 'Every day at noon the escalation engine checks each open petition against three rules: High priority open 48 hours, untouched for 7 days, or a work plan gone silent past halfway. A flagged petition goes to the grievance cell.',
-    fact: 'Red lines are escalations',
-    accent: true,
-  },
-  {
-    key: 'resolution',
-    stage: 'Resolution',
-    title: 'Closed with proof.',
-    body: 'The official resolves the case with a resolution document and a note attached. The petitioner rates it and leaves feedback, or escalates if the fix did not hold.',
-    fact: 'Every action logged on the timeline',
-  },
+  { key: 'filed' },
+  { key: 'review' },
+  { key: 'investigation' },
+  { key: 'escalated', accent: true },
+  { key: 'resolution' },
 ];
 
 const ROLES = [
-  { who: 'Petitioner', does: 'Files, tracks, chats with the official, rates the fix', to: '/login/petitioner' },
-  { who: 'Department official', does: 'Accepts, plans, reassigns, resolves with proof', to: '/login/official' },
-  { who: 'Grievance cell', does: 'Answers escalations, reads analytics, asks Smart Query', to: '/login/admin' },
+  { key: 'petitioner', to: '/login/petitioner' },
+  { key: 'official', to: '/login/official' },
+  { key: 'admin', to: '/login/admin' },
 ];
 
-const FAQ = [
-  {
-    q: 'How does my petition reach the right official?',
-    a: 'You choose the department and your district, division and taluk. Those are matched to the official responsible for that jurisdiction, and the petition goes straight into their pending queue.',
-  },
-  {
-    q: 'Do I need an account to track a petition?',
-    a: 'No. Enter the petition ID on this page, like a courier tracking number. You see its status, who it is assigned to and every stage on its timeline.',
-  },
-  {
-    q: 'What happens if nobody acts on it?',
-    a: 'The escalation engine flags it. High priority petitions open for 48 hours, petitions pending or assigned for 7 days, and work plans past halfway with no milestone are caught by a check every day at noon. The grievance cell is told, and you can escalate with your reason.',
-  },
-  {
-    q: 'What if I am not satisfied with the resolution?',
-    a: 'Rate it and leave feedback, or escalate the case with your reason. The grievance cell can respond or reassign it to another official.',
-  },
-  {
-    q: 'Can the AI change the database?',
-    a: 'No. Smart Query only builds read queries from allow-listed fields and values such as department and status. Raw model output is never executed.',
-  },
-];
+const FAQ_KEYS = ['route', 'account', 'nobody', 'unsatisfied', 'ai'];
 
 const GrievancePortal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useT();
   const stageRef = useRef(null);
   const canvasRef = useRef(null);
   const labelsRef = useRef(null);
@@ -243,20 +194,20 @@ const GrievancePortal = () => {
           <div className="lp-stage__labels" ref={labelsRef}>
             {DEPARTMENTS.map((d) => (
               <span key={d.name} className="lp-label lp-label--dept" data-anchor={`dept-${d.name}`} data-grow="0.05">
-                {d.name}
+                {t(`dept.${d.name}`)}
               </span>
             ))}
             {STAGES.map((s) => (
               <span key={s.key} className="lp-label lp-label--stage" data-anchor={`stage-${s.key}`} data-journey="true">
-                {s.name}
+                {t(`stage.${s.key}`)}
               </span>
             ))}
-            <span className="lp-label lp-label--gate" data-anchor="gate" data-grow="0.9">Escalated</span>
+            <span className="lp-label lp-label--gate" data-anchor="gate" data-grow="0.9">{t('stage.escalated')}</span>
           </div>
           <ol className={`lp-rail ${activeStep >= 0 ? 'is-on' : ''}`}>
             {JOURNEY.map((j, i) => (
               <li key={j.key} className={`${i === activeStep ? 'is-active' : ''} ${j.accent ? 'is-accent' : ''}`}>
-                {j.stage}
+                {t(`stage.${j.key}`)}
               </li>
             ))}
           </ol>
@@ -268,50 +219,48 @@ const GrievancePortal = () => {
               <span className="lp-line"><span className="lp-line__in">தீர்வு காணல்</span></span>
             </p>
             <h1 className="lp-hero__title">
-              <span className="lp-line"><span className="lp-line__in">No petition is</span></span>
+              <span className="lp-line"><span className="lp-line__in">{t('landing.heroLine1')}</span></span>
               <span className="lp-line">
-                <span className="lp-line__in">left <em>waiting.</em></span>
+                <span className="lp-line__in">{t('landing.heroLine2')} <em>{t('landing.heroLine2Em')}</em></span>
               </span>
             </h1>
             <p className="lp-hero__lede">
-              Most grievance portals stop at filing. Theervu-Kaanal routes each petition to the right
-              official, keeps it in public view, and its escalation engine flags it the day it stalls.
+              {t('landing.heroLede')}
             </p>
             <div className="lp-hero__actions">
               <button type="button" className="btn btn-primary btn-lg lp-btn" onClick={handleSubmitGrievance}>
-                File a grievance <ArrowRight size={18} aria-hidden="true" />
+                {t('common.fileGrievance')} <ArrowRight size={18} aria-hidden="true" />
               </button>
               <button type="button" className="btn btn-outline-primary btn-lg lp-btn" onClick={() => scrollToTarget('#track')}>
-                Track a petition
+                {t('nav.track')}
               </button>
             </div>
           </div>
           <p className="lp-hero__note">
-            Each line is one petition for Water, RTO or Electricity in Tamil Nadu.
-            Red lines are the ones the escalation engine caught.
+            {t('landing.heroNote')}
           </p>
           <button type="button" className="lp-hero__scroll" onClick={() => scrollToTarget('#journey')}>
-            Follow a petition <span aria-hidden="true">↓</span>
+            {t('landing.follow')} <span aria-hidden="true">↓</span>
           </button>
         </header>
 
         <section className="lp-journey" id="journey" aria-labelledby="journey-title">
-          <h2 id="journey-title" className="visually-hidden">How a petition moves</h2>
+          <h2 id="journey-title" className="visually-hidden">{t('landing.journeyTitle')}</h2>
           {JOURNEY.map((j) => (
             <article key={j.key} className={`lp-step ${j.accent ? 'lp-step--accent' : ''}`}>
               <div className="lp-step__card">
-                <p className="lp-step__stage">{j.stage}</p>
-                <h3 className="lp-step__title">{j.title}</h3>
-                <p className="lp-step__body">{j.body}</p>
-                <p className="lp-step__fact">{j.fact}</p>
+                <p className="lp-step__stage">{t(`stage.${j.key}`)}</p>
+                <h3 className="lp-step__title">{t(`landing.journey.${j.key}.title`)}</h3>
+                <p className="lp-step__body">{t(`landing.journey.${j.key}.body`)}</p>
+                <p className="lp-step__fact">{t(`landing.journey.${j.key}.fact`)}</p>
               </div>
             </article>
           ))}
           <article className="lp-step lp-step--outro">
             <div className="lp-step__card">
-              <h3 className="lp-step__title">Every line ends somewhere.</h3>
+              <h3 className="lp-step__title">{t('landing.outroTitle')}</h3>
               <p className="lp-step__body">
-                Resolved at the bottom, or pulled out in red to the grievance cell. None of them stops halfway.
+                {t('landing.outroBody')}
               </p>
             </div>
           </article>
@@ -327,66 +276,65 @@ const GrievancePortal = () => {
       <section className="lp-board" aria-labelledby="board-title">
         <div className="lp-board__grid">
           <div className="lp-tile lp-tile--head" data-reveal>
-            <h2 id="board-title">Why it stands out</h2>
+            <h2 id="board-title">{t('landing.board.title')}</h2>
           </div>
           <div className="lp-tile lp-tile--id" data-reveal style={{ '--reveal-delay': '80ms' }}>
             <div className="lp-frag lp-frag--id" data-ui>GRV100004</div>
-            <p className="lp-tile__cap"><strong>Public tracking, no login.</strong> One ID shows the whole timeline.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.idStrong')}</strong> {t('landing.board.id')}</p>
           </div>
           <div className="lp-tile lp-tile--clock" data-reveal>
             <EscalationClock />
-            <p className="lp-tile__cap"><strong>Nothing stalls silently.</strong> High priority escalates after 48 hours, stalled cases after 7 days.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.clockStrong')}</strong> {t('landing.board.clock')}</p>
           </div>
           <div className="lp-tile lp-tile--priority" data-reveal style={{ '--reveal-delay': '80ms' }}>
             <div className="lp-frag lp-frag--priority" data-ui>
-              <span className="is-on">High</span>
-              <span>Medium</span>
-              <span>Low</span>
+              <span className="is-on">{t('priority.High')}</span>
+              <span>{t('priority.Medium')}</span>
+              <span>{t('priority.Low')}</span>
             </div>
-            <p className="lp-tile__cap"><strong>AI sets the priority.</strong> Gemini reads each petition and ranks it.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.priorityStrong')}</strong> {t('landing.board.priority')}</p>
           </div>
           <div className="lp-tile lp-tile--repeat" data-reveal style={{ '--reveal-delay': '160ms' }}>
             <div className="lp-frag lp-frag--repeat" data-ui>
               <span>W</span><span>W</span><span>W</span>
             </div>
-            <p className="lp-tile__cap"><strong>Repeat problems linked.</strong> Similar petitions from one area are flagged, so the cause is fixed once.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.repeatStrong')}</strong> {t('landing.board.repeat')}</p>
           </div>
           <div className="lp-tile lp-tile--chat" data-reveal>
             <div className="lp-frag lp-frag--chat" data-ui>
-              <span className="from">The crew is on site at 10.</span>
-              <span className="to">Thank you, the pipe is still leaking.</span>
+              <span className="from">{t('landing.board.chatFrom')}</span>
+              <span className="to">{t('landing.board.chatTo')}</span>
             </div>
-            <p className="lp-tile__cap"><strong>Chat on every case.</strong> Petitioner and official talk on the petition itself.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.chatStrong')}</strong> {t('landing.board.chat')}</p>
           </div>
           <div className="lp-tile lp-tile--res" data-reveal style={{ '--reveal-delay': '80ms' }}>
             <div className="lp-frag lp-frag--res" data-ui>
-              <span>Funds</span><span>Manpower</span><span>Materials</span><span>Start date</span>
+              <span>{t('resource.funds')}</span><span>{t('resource.manpower')}</span><span>{t('resource.materials')}</span><span>{t('resource.startDate')}</span>
             </div>
-            <p className="lp-tile__cap"><strong>Resources planned per case.</strong> Rolled up for the heads of department.</p>
+            <p className="lp-tile__cap"><strong>{t('landing.board.resStrong')}</strong> {t('landing.board.res')}</p>
           </div>
         </div>
       </section>
 
       <section className="lp-query" aria-labelledby="query-title">
         <div className="lp-query__text" data-reveal>
-          <h2 id="query-title">Ask the data in plain English.</h2>
+          <h2 id="query-title">{t('landing.query.title')}</h2>
           <p>
-            Admins type a question. Gemini classifies it and fills in the filters; without a key, a
-            rule-based analyser does the same. Only allow-listed fields and values ever reach the database.
+            {t('landing.query.body')}
           </p>
         </div>
         <SmartQueryDemo />
       </section>
 
       <section className="lp-roles" aria-labelledby="roles-title">
-        <h2 id="roles-title" data-reveal>Three desks, one record.</h2>
+        <h2 id="roles-title" data-reveal>{t('landing.rolesTitle')}</h2>
         <ul className="lp-roles__list">
           {ROLES.map((r, i) => (
-            <li key={r.who} data-reveal style={{ '--reveal-delay': `${i * 80}ms` }}>
+            <li key={r.key} data-reveal style={{ '--reveal-delay': `${i * 80}ms` }}>
               <Link to={r.to} className="lp-roles__row">
-                <span className="lp-roles__who">{r.who}</span>
-                <span className="lp-roles__does">{r.does}</span>
-                <span className="lp-roles__go">Sign in <ArrowUpRight size={22} aria-hidden="true" /></span>
+                <span className="lp-roles__who">{t(`roles.${r.key}`)}</span>
+                <span className="lp-roles__does">{t(`landing.roleDoes.${r.key}`)}</span>
+                <span className="lp-roles__go">{t('nav.signIn')} <ArrowUpRight size={22} aria-hidden="true" /></span>
               </Link>
             </li>
           ))}
@@ -395,28 +343,28 @@ const GrievancePortal = () => {
 
       <section className="lp-faq" aria-labelledby="faq-title">
         <div className="lp-faq__head">
-          <h2 id="faq-title" data-reveal>Questions</h2>
+          <h2 id="faq-title" data-reveal>{t('landing.faqTitle')}</h2>
         </div>
-        {FAQ.map((f) => (
-          <div className="lp-faq__band" key={f.q}>
-            <h3 data-reveal>{f.q}</h3>
-            <p data-reveal style={{ '--reveal-delay': '90ms' }}>{f.a}</p>
+        {FAQ_KEYS.map((k) => (
+          <div className="lp-faq__band" key={k}>
+            <h3 data-reveal>{t(`landing.faq.${k}.q`)}</h3>
+            <p data-reveal style={{ '--reveal-delay': '90ms' }}>{t(`landing.faq.${k}.a`)}</p>
           </div>
         ))}
       </section>
 
       <section className="lp-cta" aria-labelledby="cta-title">
         <h2 id="cta-title" className="lp-cta__title">
-          <span className="lp-cta__line lp-cta__line--top">File it.</span>
-          <span className="lp-cta__line lp-cta__line--bottom">Or track it.</span>
+          <span className="lp-cta__line lp-cta__line--top">{t('landing.ctaTop')}</span>
+          <span className="lp-cta__line lp-cta__line--bottom">{t('landing.ctaBottom')}</span>
         </h2>
         <div className="lp-cta__mid">
         <div className="lp-cta__row">
-          <button type="button" className="btn btn-accent btn-lg lp-btn" onClick={handleSubmitGrievance}>File a grievance</button>
-          <span className="lp-cta__or">or</span>
-          <button type="button" className="btn btn-light btn-lg lp-btn" onClick={() => scrollToTarget('#track')}>Track a petition</button>
+          <button type="button" className="btn btn-accent btn-lg lp-btn" onClick={handleSubmitGrievance}>{t('common.fileGrievance')}</button>
+          <span className="lp-cta__or">{t('common.or')}</span>
+          <button type="button" className="btn btn-light btn-lg lp-btn" onClick={() => scrollToTarget('#track')}>{t('nav.track')}</button>
         </div>
-        <p className="lp-cta__after">Either way, you get a petition ID and a public timeline.</p>
+        <p className="lp-cta__after">{t('landing.ctaAfter')}</p>
         </div>
       </section>
 

@@ -2,28 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { API_BASE } from '../config';
 import { describeVerdict } from '../engine/format';
+import { useT } from '../i18n/LanguageContext';
 
 // Seeded demo petitions (server/config/seed.js), so the panel works on a fresh install.
-const EXAMPLES = [
-  { id: 'GRV100004', label: 'Transformer sparking near school' },
-  { id: 'GRV100001', label: 'Contaminated drinking water' },
-  { id: 'GRV100005', label: 'Driving licence renewal pending' },
-];
-
-const STATUS_LABEL = {
-  pending: 'Pending',
-  assigned: 'Assigned',
-  'in-progress': 'In progress',
-  resolved: 'Resolved',
-  rejected: 'Declined',
-  escalated: 'Escalated',
-};
-
-const fmt = (d) =>
-  d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const EXAMPLES = ['GRV100004', 'GRV100001', 'GRV100005'];
 
 export default function TrackPanel() {
-  const [value, setValue] = useState(EXAMPLES[0].id);
+  const { t, formatDate: fmt } = useT();
+  const [value, setValue] = useState(EXAMPLES[0]);
   const [state, setState] = useState({ status: 'idle' });
   const inputRef = useRef(null);
   const requestId = useRef(0);
@@ -31,7 +17,7 @@ export default function TrackPanel() {
   const track = async (raw) => {
     const id = raw.trim().toUpperCase();
     if (!id) {
-      setState({ status: 'error', message: 'Enter a petition ID, for example GRV100004.' });
+      setState({ status: 'error', message: t('track.enterId') });
       return;
     }
     const mine = ++requestId.current;
@@ -39,7 +25,7 @@ export default function TrackPanel() {
     try {
       const res = await fetch(`${API_BASE}/api/grievances/track/${encodeURIComponent(id)}`);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(res.status === 404 ? `No petition found with ID ${id}.` : data.error || 'Could not track that petition.');
+      if (!res.ok) throw new Error(res.status === 404 ? t('track.notFound', { id }) : data.error || t('track.failed'));
 
       let stages = [];
       try {
@@ -55,14 +41,14 @@ export default function TrackPanel() {
       const offline = e instanceof TypeError;
       setState({
         status: 'error',
-        message: offline ? 'The server is not reachable right now. Try again in a moment.' : e.message,
+        message: offline ? t('track.offline') : e.message,
       });
     }
   };
 
   // Show a real result as soon as the section exists.
   useEffect(() => {
-    track(EXAMPLES[0].id);
+    track(EXAMPLES[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -79,17 +65,17 @@ export default function TrackPanel() {
 
   const g = state.grievance;
   const escalated = g && (g.status === 'escalated' || g.escalationStatus === 'Escalated' || g.isEscalated);
-  const verdict = g && describeVerdict(g.engine, { escalationStatus: g.escalationStatus });
+  const verdict = g && describeVerdict(g.engine, t, { escalationStatus: g.escalationStatus });
 
   return (
     <div className="lp-trackp">
       <div className="lp-trackp__intro" data-reveal>
-        <h2 id="track-title">Track a petition. No login.</h2>
-        <p>Type the ID you were given when you filed. You see the status, the official handling it and every stage so far.</p>
+        <h2 id="track-title">{t('track.title')}</h2>
+        <p>{t('track.lede')}</p>
       </div>
 
       <form className="lp-trackp__form" onSubmit={onSubmit} role="search" data-ui>
-        <label htmlFor="track-id" className="visually-hidden">Petition ID</label>
+        <label htmlFor="track-id" className="visually-hidden">{t('common.petitionId')}</label>
         <input
           id="track-id"
           ref={inputRef}
@@ -100,24 +86,24 @@ export default function TrackPanel() {
           autoComplete="off"
           aria-describedby="track-hint"
         />
-        <button type="submit" className="lp-trackp__go" aria-label="Track this petition">
+        <button type="submit" className="lp-trackp__go" aria-label={t('track.go')}>
           <ArrowRight size={36} aria-hidden="true" />
         </button>
       </form>
-      <p id="track-hint" className="visually-hidden">Petition IDs start with GRV followed by six digits.</p>
+      <p id="track-hint" className="visually-hidden">{t('track.hint')}</p>
 
       <div className="lp-trackp__examples">
-        <span>Try a demo petition:</span>
-        {EXAMPLES.map((ex) => (
-          <button key={ex.id} type="button" onClick={() => pick(ex.id)} className={value === ex.id ? 'is-on' : ''}>
-            {ex.label}
+        <span>{t('track.tryDemo')}</span>
+        {EXAMPLES.map((id) => (
+          <button key={id} type="button" onClick={() => pick(id)} className={value === id ? 'is-on' : ''}>
+            {t(`track.examples.${id}`)}
           </button>
         ))}
       </div>
 
       <div className="lp-trackp__result" aria-live="polite" data-ui>
         {state.status === 'loading' && (
-          <div className="lp-trackp__skeleton" aria-label="Loading">
+          <div className="lp-trackp__skeleton" aria-label={t('common.loading')}>
             <span /><span /><span />
           </div>
         )}
@@ -132,24 +118,24 @@ export default function TrackPanel() {
                 <h3>{g.title}</h3>
               </div>
               <span className={`lp-chip lp-chip--${escalated ? 'escalated' : g.status}`}>
-                {escalated ? 'Escalated' : STATUS_LABEL[g.status] || g.status}
+                {escalated ? t('status.escalated') : t(`status.${g.status}`)}
               </span>
             </div>
 
             <dl className="lp-trackp__facts">
-              <div><dt>Department</dt><dd>{g.department || '—'}</dd></div>
-              <div><dt>Priority</dt><dd className={g.priority === 'High' ? 'is-high' : ''}>{g.priority || '—'}</dd></div>
+              <div><dt>{t('common.department')}</dt><dd>{g.department ? t(`dept.${g.department}`) : '—'}</dd></div>
+              <div><dt>{t('common.priority')}</dt><dd className={g.priority === 'High' ? 'is-high' : ''}>{g.priority ? t(`priority.${g.priority}`) : '—'}</dd></div>
               <div>
-                <dt>Assigned to</dt>
-                <dd>{g.assignedTo ? `${g.assignedTo.firstName} ${g.assignedTo.lastName}` : 'Not assigned yet'}</dd>
+                <dt>{t('common.assignedTo')}</dt>
+                <dd>{g.assignedTo ? `${g.assignedTo.firstName} ${g.assignedTo.lastName}` : t('common.notAssigned')}</dd>
               </div>
-              <div><dt>Filed</dt><dd>{fmt(g.createdAt)}</dd></div>
-              <div><dt>Last update</dt><dd>{fmt(g.updatedAt)}</dd></div>
+              <div><dt>{t('common.filed')}</dt><dd>{fmt(g.createdAt)}</dd></div>
+              <div><dt>{t('common.lastUpdate')}</dt><dd>{fmt(g.updatedAt)}</dd></div>
             </dl>
 
             {verdict && (
               <div className={`lp-trackp__engine lp-trackp__engine--${verdict.tone}`}>
-                <p className="lp-trackp__engine-label">Escalation engine</p>
+                <p className="lp-trackp__engine-label">{t('engine.title')}</p>
                 <p className="lp-trackp__engine-head">{verdict.headline}</p>
                 <p className="lp-trackp__engine-detail">{verdict.detail}</p>
               </div>
@@ -163,7 +149,7 @@ export default function TrackPanel() {
                     className={s.stageName === 'Escalated' ? 'is-escalated' : ''}
                     style={{ '--i': i }}
                   >
-                    <strong>{s.stageName}</strong>
+                    <strong>{t(`stage.byName.${s.stageName}`)}</strong>
                     <time>{fmt(s.date)}</time>
                     {s.description && <span>{s.description}</span>}
                   </li>

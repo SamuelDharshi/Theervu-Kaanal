@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import '../styles/Modal.css';
 
-const EscalateModal = ({ isOpen, onClose, onSubmit, grievanceId }) => {
+// The petitioner's escalation to the grievance cell, with their reason.
+const EscalateModal = ({ show, onHide, onSubmit, selectedGrievance }) => {
+    const { t } = useT();
     const [reason, setReason] = useState('');
 
-    if (!isOpen) return null;
+    if (!show) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -13,47 +16,40 @@ const EscalateModal = ({ isOpen, onClose, onSubmit, grievanceId }) => {
     };
 
     return (
-        <>
-            <div className="modal-overlay">
-                <div className="modal-content">
-                    <div className="modal-header">
-                        <h2 className="modal-title">Escalate Grievance</h2>
-                    </div>
-                    <form onSubmit={handleSubmit}>
-                        <div className="modal-body">
-                            <label htmlFor="escalationReason" className="form-label">
-                                Please provide a reason for escalating this grievance
-                            </label>
-                            <textarea
-                                id="escalationReason"
-                                className="modal-textarea"
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                                placeholder="Enter your reason for escalation..."
-                                required
-                            />
-                        </div>
-                        <div className="modal-footer">
-                            <button
-                                type="button"
-                                className="modal-button cancel"
-                                onClick={onClose}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="modal-button submit"
-                                disabled={!reason.trim()}
-                            >
-                                Submit Escalation
-                            </button>
-                        </div>
-                    </form>
+        <div className="modal-overlay">
+            <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="escalate-title">
+                <div className="modal-header">
+                    <h2 className="modal-title" id="escalate-title">
+                        {t('escalate.title')}
+                        {selectedGrievance?.grievanceId ? ` · ${selectedGrievance.grievanceId}` : ''}
+                    </h2>
                 </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body">
+                        <label htmlFor="escalationReason" className="form-label">
+                            {t('escalate.reasonLabel')}
+                        </label>
+                        <textarea
+                            id="escalationReason"
+                            className="modal-textarea"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder={t('escalate.reasonPlaceholder')}
+                            required
+                        />
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="modal-button cancel" onClick={onHide}>
+                            {t('common.cancel')}
+                        </button>
+                        <button type="submit" className="modal-button submit" disabled={!reason.trim()}>
+                            {t('escalate.submit')}
+                        </button>
+                    </div>
+                </form>
             </div>
-        </>
+        </div>
     );
 };
 
-export default EscalateModal; 
+export default EscalateModal;

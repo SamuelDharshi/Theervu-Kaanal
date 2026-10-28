@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRedirectPath } from '../utils/authUtils';
 import { supabase } from '../config/supabase';
 import { API_BASE } from '../config';
+import { useT } from '../i18n/LanguageContext';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [tokenExpiryWarning, setTokenExpiryWarning] = useState(false);
     const navigate = useNavigate();
+    const { t } = useT();
 
     const decodeToken = (token) => {
         if (!token) {
@@ -390,7 +392,7 @@ export const AuthProvider = ({ children }) => {
 
     if (loading) {
         return (
-            <div className="tk-boot" role="status" aria-label="Loading">
+            <div className="tk-boot" role="status" aria-label={t('common.loading')}>
                 <span className="tk-boot__mark" aria-hidden="true"><i /><i /><i /></span>
             </div>
         );
@@ -411,7 +413,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={value}>
             {tokenExpiryWarning && (
                 <div className="fixed top-0 right-0 m-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
-                    <p>Your session is about to expire. Please save your work.</p>
+                    <p>{t('common.sessionExpiring')}</p>
                 </div>
             )}
             {children}

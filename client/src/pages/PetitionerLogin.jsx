@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate, Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import { ArrowRight } from "lucide-react";
@@ -8,6 +9,7 @@ import { getRedirectPath } from "../utils/authUtils";
 const PetitionerLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { t } = useT();
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState("");
@@ -25,15 +27,15 @@ const PetitionerLogin = () => {
         let formIsValid = true;
 
         if (!formData.email.trim()) {
-            tempErrors.email = "Email is required";
+            tempErrors.email = "validation.emailRequired";
             formIsValid = false;
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            tempErrors.email = "Invalid email format";
+            tempErrors.email = "validation.emailInvalid";
             formIsValid = false;
         }
 
         if (!formData.password) {
-            tempErrors.password = "Password is required";
+            tempErrors.password = "validation.passwordRequired";
             formIsValid = false;
         }
 
@@ -63,23 +65,23 @@ const PetitionerLogin = () => {
             }
         } catch (error) {
             console.error('Login error:', error);
-            setServerError(error.message || "Server error. Please try again later.");
+            setServerError(error.message || t('common.serverError'));
         }
     };
 
     return (
         <AuthShell
-            role="For citizens filing and tracking petitions"
-            title="Sign in to file and track"
-            lede="Your petitions, their timelines and your chats with officials are in one place."
+            role={t('login.petitioner.role')}
+            title={t('login.petitioner.title')}
+            lede={t('login.petitioner.lede')}
             back="/login"
-            backLabel="All sign-in options"
+            backLabel={t('login.allOptions')}
             accentThread={1}
         >
             {serverError && <div className="alert alert-danger" role="alert">{serverError}</div>}
             <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
+                    <label htmlFor="email" className="form-label">{t('form.email')}</label>
                     <input
                         type="email"
                         className={`form-control ${errors.email ? "is-invalid" : ""}`}
@@ -89,10 +91,10 @@ const PetitionerLogin = () => {
                         onChange={handleChange}
                         autoComplete="email"
                     />
-                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    {errors.email && <div className="invalid-feedback">{t(errors.email)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
+                    <label htmlFor="password" className="form-label">{t('form.password')}</label>
                     <input
                         type="password"
                         className={`form-control ${errors.password ? "is-invalid" : ""}`}
@@ -102,13 +104,13 @@ const PetitionerLogin = () => {
                         onChange={handleChange}
                         autoComplete="current-password"
                     />
-                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                    {errors.password && <div className="invalid-feedback">{t(errors.password)}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary btn-lg tk-auth__submit">
-                    Sign in <ArrowRight size={18} aria-hidden="true" />
+                    {t('nav.signIn')} <ArrowRight size={18} aria-hidden="true" />
                 </button>
             </form>
-            <p className="tk-auth__alt">No account yet? <Link to="/register/petitioner">Create one</Link></p>
+            <p className="tk-auth__alt">{t('login.noAccount')} <Link to="/register/petitioner">{t('login.createOne')}</Link></p>
         </AuthShell>
     );
 };

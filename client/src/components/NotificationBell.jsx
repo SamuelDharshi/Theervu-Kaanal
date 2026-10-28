@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { Bell } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -6,6 +7,7 @@ import { Badge, Dropdown } from 'react-bootstrap';
 import { API_BASE } from '../config';
 
 const NotificationBell = ({ userId, userRole }) => {
+    const { t, locale } = useT();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [show, setShow] = useState(false);
@@ -24,26 +26,28 @@ const NotificationBell = ({ userId, userRole }) => {
         const past = new Date(date);
         const diffInSeconds = Math.floor((now - past) / 1000);
 
+        const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
         if (diffInSeconds < 60) {
-            return 'just now';
+            return rtf.format(0, 'second');
         }
 
         const diffInMinutes = Math.floor(diffInSeconds / 60);
         if (diffInMinutes < 60) {
-            return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+            return rtf.format(-diffInMinutes, 'minute');
         }
 
         const diffInHours = Math.floor(diffInMinutes / 60);
         if (diffInHours < 24) {
-            return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+            return rtf.format(-diffInHours, 'hour');
         }
 
         const diffInDays = Math.floor(diffInHours / 24);
         if (diffInDays < 30) {
-            return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+            return rtf.format(-diffInDays, 'day');
         }
 
-        return past.toLocaleDateString();
+        return past.toLocaleDateString(locale);
     };
 
     // Fetch notifications
@@ -74,7 +78,7 @@ const NotificationBell = ({ userId, userRole }) => {
         } catch (error) {
             console.error('Error fetching notifications:', error);
             if (error.response?.status !== 404) {
-                toast.error('Failed to fetch notifications');
+                toast.error(t('notifications.fetchFailed'));
             }
             // Set empty state on error
             setNotifications([]);
@@ -96,7 +100,7 @@ const NotificationBell = ({ userId, userRole }) => {
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('Error marking notification as read:', error);
-            toast.error('Failed to mark notification as read');
+            toast.error(t('notifications.markFailed'));
         }
     };
 
@@ -110,7 +114,7 @@ const NotificationBell = ({ userId, userRole }) => {
             setUnreadCount(0);
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
-            toast.error('Failed to mark all notifications as read');
+            toast.error(t('notifications.markFailed'));
         }
     };
 
@@ -191,7 +195,8 @@ const NotificationBell = ({ userId, userRole }) => {
                         }
                         `}
                     </style>
-                    <Bell size={24} />
+                    <Bell size={24} aria-hidden="true" />
+                    <span className="visually-hidden">{t('notifications.title')}</span>
                     {unreadCount > 0 && (
                         <Badge
                             bg="danger"
@@ -218,25 +223,25 @@ const NotificationBell = ({ userId, userRole }) => {
 
                 <Dropdown.Menu className="notification-menu p-0" style={{ width: '320px', maxHeight: '400px', overflowY: 'auto' }}>
                     <div className="p-2 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 className="mb-0">Notifications</h6>
+                        <h6 className="mb-0">{t('notifications.title')}</h6>
                         {notifications && notifications.length > 0 && (
                             <button
                                 className="btn btn-link btn-sm text-decoration-none"
                                 onClick={markAllAsRead}
                             >
-                                Mark all as read
+                                {t('notifications.markAll')}
                             </button>
                         )}
                     </div>
                     {loading ? (
                         <div className="p-3 text-center">
                             <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                                <span className="visually-hidden">{t('common.loading')}</span>
                             </div>
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className="p-3 text-center text-muted">
-                            No notifications
+                            {t('notifications.none')}
                         </div>
                     ) : (
                         <div>

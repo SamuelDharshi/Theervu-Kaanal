@@ -1,7 +1,9 @@
 import React from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { useLocationDropdowns } from '../hooks/useLocationDropdowns';
 
 const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
+  const { t } = useT();
   const {
     districts,
     divisions,
@@ -37,7 +39,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
     <div className="row g-3">
       <div className="col-md-4">
         <label htmlFor="loc-district" className="form-label">
-          District*
+          {t('form.district')}*
         </label>
         <select
           id="loc-district"
@@ -46,7 +48,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
           className="form-select"
           required
         >
-          <option value="">Select District</option>
+          <option value="">{t('form.selectDistrict')}</option>
           {districts.map((district) => (
             <option key={district} value={district}>
               {district}
@@ -57,7 +59,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
 
       <div className="col-md-4">
         <label htmlFor="loc-division" className="form-label">
-          Division*
+          {t('form.division')}*
         </label>
         <select
           id="loc-division"
@@ -67,7 +69,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
           required
           disabled={!selectedDistrict}
         >
-          <option value="">Select Division</option>
+          <option value="">{t('form.selectDivision')}</option>
           {divisions.map((division) => (
             <option key={division} value={division}>
               {division}
@@ -78,7 +80,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
 
       <div className="col-md-4">
         <label htmlFor="loc-taluk" className="form-label">
-          Taluk*
+          {t('form.taluk')}*
         </label>
         <select
           id="loc-taluk"
@@ -88,7 +90,7 @@ const LocationDropdowns = ({ onLocationChange, initialValues = {} }) => {
           required
           disabled={!selectedDivision}
         >
-          <option value="">Select Taluk</option>
+          <option value="">{t('form.selectTaluk')}</option>
           {taluks.map((taluk) => (
             <option key={taluk} value={taluk}>
               {taluk}

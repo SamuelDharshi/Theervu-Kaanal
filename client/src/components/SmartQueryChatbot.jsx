@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MessageItem from './MessageItem';
 import api, { isTokenValid } from '../utils/api';
@@ -7,6 +8,7 @@ import './SmartQueryChatbot.css';
 const SmartQueryChatbot = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useT();
     const messagesRef = useRef([]);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ const SmartQueryChatbot = () => {
             if (!isValid) {
                 console.log('Token validation failed in SmartQueryChatbot');
                 setIsAuthenticated(false);
-                setError('Your session has expired or is invalid. Please log in again.');
+                setError(t('common.sessionExpired'));
                 localStorage.setItem('redirectAfterLogin', location.pathname);
                 localStorage.removeItem('token'); // Clear invalid token
                 navigate('/login');
@@ -44,7 +46,7 @@ const SmartQueryChatbot = () => {
         } catch (error) {
             console.error('Auth verification failed:', error);
             setIsAuthenticated(false);
-            setError('Authentication failed. Please log in again.');
+            setError(t('common.sessionExpired'));
             localStorage.setItem('redirectAfterLogin', location.pathname);
             localStorage.removeItem('token');
             navigate('/login');
@@ -72,12 +74,12 @@ const SmartQueryChatbot = () => {
 
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 setIsAuthenticated(false);
-                setError('Your session has expired. Please log in again.');
+                setError(t('common.sessionExpired'));
                 localStorage.setItem('redirectAfterLogin', location.pathname);
                 localStorage.removeItem('token');
                 navigate('/login');
             } else {
-                setError('Failed to load message history. Please try refreshing the page.');
+                setError(t('chatbot.historyFailed'));
             }
         }
     };
@@ -100,7 +102,7 @@ const SmartQueryChatbot = () => {
 
     const handleSend = async () => {
         if (!isAuthenticated) {
-            setError('Please log in to send messages.');
+            setError(t('chatbot.loginToSend'));
             localStorage.setItem('redirectAfterLogin', location.pathname);
             navigate('/login');
             return;
@@ -136,10 +138,10 @@ const SmartQueryChatbot = () => {
             }
         } catch (error) {
             console.error('Error processing query:', error);
-            let errorMessage = 'Sorry, I encountered an error processing your query. Please try again.';
+            let errorMessage = t('chatbot.queryFailed');
 
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
-                errorMessage = 'Your session has expired. Please log in again.';
+                errorMessage = t('common.sessionExpired');
                 setIsAuthenticated(false);
                 localStorage.setItem('redirectAfterLogin', location.pathname);
                 localStorage.removeItem('token');
@@ -174,7 +176,7 @@ const SmartQueryChatbot = () => {
 
     const handleClearChat = async () => {
         if (!isAuthenticated) {
-            setError('Please log in to clear chat history');
+            setError(t('chatbot.loginToSend'));
             return;
         }
 
@@ -194,7 +196,7 @@ const SmartQueryChatbot = () => {
             }
         } catch (error) {
             console.error('Error clearing chat:', error);
-            setError(error.response?.data?.error || 'Failed to clear chat history');
+            setError(error.response?.data?.error || t('chatbot.clearFailed'));
         } finally {
             setLoading(false);
         }
@@ -205,20 +207,20 @@ const SmartQueryChatbot = () => {
             <div className="chat-header-container">
                 <div className="chat-header">
                     <div className="header-content">
-                        <h2>Smart Query Assistant</h2>
-                        <p>Ask questions about grievances, resources, and escalations in natural language</p>
+                        <h2>{t('admin.smartQueryTitle')}</h2>
+                        <p>{t('admin.smartQueryLede')}</p>
                         <button
                             className="clear-chat-button"
                             onClick={handleClearChat}
                             disabled={loading || !isAuthenticated || messages.length === 0}
                         >
-                            {loading ? 'Clearing...' : 'Clear Chat'}
+                            {loading ? t('chatbot.clearing') : t('chatbot.clear')}
                         </button>
                     </div>
                     {error && (
                         <div className="error-message">
                             <span>{error}</span>
-                            {(!isAuthenticated || error.includes('log in')) && (
+                            {!isAuthenticated && (
                                 <button
                                     className="login-button"
                                     onClick={() => {
@@ -226,7 +228,7 @@ const SmartQueryChatbot = () => {
                                         navigate('/login');
                                     }}
                                 >
-                                    Log In
+                                    {t('nav.signIn')}
                                 </button>
                             )}
                         </div>
@@ -259,13 +261,15 @@ const SmartQueryChatbot = () => {
                     contentEditable={isAuthenticated && !error}
                     onKeyPress={handleKeyPress}
                     onPaste={handlePaste}
-                    data-placeholder={!isAuthenticated ? 'Please log in to send messages' : 'Ask a question...'}
+                    data-placeholder={!isAuthenticated ? t('chatbot.loginToSend') : t('chatbot.ask')}
+                    aria-label={t('chatbot.ask')}
+                    role="textbox"
                 />
                 <button
                     onClick={handleSend}
                     disabled={loading || !isAuthenticated || error}
                 >
-                    Send
+                    {t('chatbot.send')}
                 </button>
             </div>
         </div>

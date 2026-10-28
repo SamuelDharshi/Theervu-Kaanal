@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useT } from '../i18n/LanguageContext';
 import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import { ArrowRight } from "lucide-react";
@@ -6,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 const OfficialLogin = () => {
     const { login } = useAuth();
+    const { t } = useT();
     const [formData, setFormData] = useState({
         employeeId: "",
         email: "",
@@ -28,25 +30,25 @@ const OfficialLogin = () => {
         let formIsValid = true;
 
         if (!formData.employeeId.trim()) {
-            tempErrors.employeeId = "Employee ID is required";
+            tempErrors.employeeId = "validation.employeeIdRequired";
             formIsValid = false;
         }
 
         if (!formData.email.trim()) {
-            tempErrors.email = "Email is required";
+            tempErrors.email = "validation.emailRequired";
             formIsValid = false;
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            tempErrors.email = "Invalid email format";
+            tempErrors.email = "validation.emailInvalid";
             formIsValid = false;
         }
 
         if (!formData.password) {
-            tempErrors.password = "Password is required";
+            tempErrors.password = "validation.passwordRequired";
             formIsValid = false;
         }
 
         if (!formData.department) {
-            tempErrors.department = "Department is required";
+            tempErrors.department = "validation.departmentRequired";
             formIsValid = false;
         }
 
@@ -62,23 +64,23 @@ const OfficialLogin = () => {
             await login(formData.email, formData.password, formData.department, formData.employeeId);
         } catch (error) {
             console.error('Login error:', error);
-            setServerError(error.message || "Server error. Please try again later.");
+            setServerError(error.message || t('common.serverError'));
         }
     };
 
     return (
         <AuthShell
-            role="For department officials in Water, RTO and Electricity"
-            title="Official sign in"
-            lede="Your queue holds the petitions routed to your jurisdiction."
+            role={t('login.official.role')}
+            title={t('login.official.title')}
+            lede={t('login.official.lede')}
             back="/login"
-            backLabel="All sign-in options"
+            backLabel={t('login.allOptions')}
             accentThread={3}
         >
             {serverError && <div className="alert alert-danger" role="alert">{serverError}</div>}
             <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
-                    <label htmlFor="employeeId" className="form-label">Employee ID</label>
+                    <label htmlFor="employeeId" className="form-label">{t('form.employeeId')}</label>
                     <input
                         type="text"
                         className={`form-control ${errors.employeeId ? "is-invalid" : ""}`}
@@ -88,10 +90,10 @@ const OfficialLogin = () => {
                         onChange={handleChange}
                         autoComplete="username"
                     />
-                    {errors.employeeId && <div className="invalid-feedback">{errors.employeeId}</div>}
+                    {errors.employeeId && <div className="invalid-feedback">{t(errors.employeeId)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
+                    <label htmlFor="email" className="form-label">{t('form.email')}</label>
                     <input
                         type="email"
                         className={`form-control ${errors.email ? "is-invalid" : ""}`}
@@ -101,10 +103,10 @@ const OfficialLogin = () => {
                         onChange={handleChange}
                         autoComplete="email"
                     />
-                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    {errors.email && <div className="invalid-feedback">{t(errors.email)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
+                    <label htmlFor="password" className="form-label">{t('form.password')}</label>
                     <input
                         type="password"
                         className={`form-control ${errors.password ? "is-invalid" : ""}`}
@@ -114,10 +116,10 @@ const OfficialLogin = () => {
                         onChange={handleChange}
                         autoComplete="current-password"
                     />
-                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                    {errors.password && <div className="invalid-feedback">{t(errors.password)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="department" className="form-label">Department</label>
+                    <label htmlFor="department" className="form-label">{t('common.department')}</label>
                     <select
                         className={`form-select ${errors.department ? "is-invalid" : ""}`}
                         id="department"
@@ -125,18 +127,18 @@ const OfficialLogin = () => {
                         value={formData.department}
                         onChange={handleChange}
                     >
-                        <option value="">Select department</option>
-                        <option value="Water">Water</option>
-                        <option value="RTO">RTO</option>
-                        <option value="Electricity">Electricity</option>
+                        <option value="">{t('form.selectDepartment')}</option>
+                        <option value="Water">{t('dept.Water')}</option>
+                        <option value="RTO">{t('dept.RTO')}</option>
+                        <option value="Electricity">{t('dept.Electricity')}</option>
                     </select>
-                    {errors.department && <div className="invalid-feedback">{errors.department}</div>}
+                    {errors.department && <div className="invalid-feedback">{t(errors.department)}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary btn-lg tk-auth__submit">
-                    Sign in <ArrowRight size={18} aria-hidden="true" />
+                    {t('nav.signIn')} <ArrowRight size={18} aria-hidden="true" />
                 </button>
             </form>
-            <p className="tk-auth__alt">New to the desk? <Link to="/register/official">Register as an official</Link></p>
+            <p className="tk-auth__alt">{t('login.official.newToDesk')} <Link to="/register/official">{t('login.official.registerLink')}</Link></p>
         </AuthShell>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 
 /*
  * A worked example of the admin's Smart Query: the question types itself, then
@@ -21,6 +22,7 @@ const EXAMPLES = [
 ];
 
 export default function SmartQueryDemo() {
+  const { t } = useT();
   const [index, setIndex] = useState(0);
   const [typed, setTyped] = useState('');
   const [showParsed, setShowParsed] = useState(false);
@@ -64,12 +66,12 @@ export default function SmartQueryDemo() {
 
   return (
     <div className="lp-sq" ref={rootRef} data-ui data-reveal>
-      <div className="lp-sq__ask">
+      <div className="lp-sq__ask" lang="en">
         <span className="lp-sq__q">{typed}</span>
         <span className="lp-sq__caret" aria-hidden="true" />
       </div>
       <div className={`lp-sq__parsed ${showParsed ? 'is-on' : ''}`}>
-        <p className="lp-sq__label">Parsed into</p>
+        <p className="lp-sq__label">{t('landing.query.parsed')}</p>
         <pre>
           <code>
             {ex.parsed.map(([k, v], i) => (
@@ -81,9 +83,9 @@ export default function SmartQueryDemo() {
             ))}
           </code>
         </pre>
-        <p className="lp-sq__note">Then run as a read-only query on allow-listed fields.</p>
+        <p className="lp-sq__note">{t('landing.query.note')}</p>
       </div>
-      <div className="lp-sq__tabs" role="tablist" aria-label="Example questions">
+      <div className="lp-sq__tabs" role="tablist" aria-label={t('landing.query.examples')}>
         {EXAMPLES.map((e, i) => (
           <button
             key={e.q}
@@ -92,6 +94,7 @@ export default function SmartQueryDemo() {
             aria-selected={i === index}
             className={i === index ? 'is-on' : ''}
             onClick={() => setIndex(i)}
+            lang="en"
           >
             {e.q}
           </button>

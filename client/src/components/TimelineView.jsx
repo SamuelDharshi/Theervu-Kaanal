@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { ArrowLeft } from 'lucide-react';
 import '../styles/Timeline.css';
 import { API_BASE } from '../config';
 
 const TimelineView = ({ grievanceId, onBack }) => {
+    const { t, formatDate } = useT();
     const [timelineStages, setTimelineStages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -29,7 +31,7 @@ const TimelineView = ({ grievanceId, onBack }) => {
                 if (!cancelled) setTimelineStages(data.timelineStages);
             } catch (error) {
                 console.error('Error fetching timeline stages:', error);
-                if (!cancelled) setError('Failed to load timeline stages');
+                if (!cancelled) setError('timeline.failed');
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -79,8 +81,8 @@ const TimelineView = ({ grievanceId, onBack }) => {
         return new Date(a.date) - new Date(b.date);
     });
 
-    if (loading) return <div className="timeline-container text-muted">Loading timeline…</div>;
-    if (error) return <div className="error">{error}</div>;
+    if (loading) return <div className="timeline-container text-muted">{t('timeline.loading')}</div>;
+    if (error) return <div className="error">{t(error)}</div>;
 
     return (
         <div className="timeline-container">
@@ -89,10 +91,11 @@ const TimelineView = ({ grievanceId, onBack }) => {
                     type="button"
                     className="btn btn-link text-dark me-3"
                     onClick={onBack}
+                    aria-label={t('common.back')}
                 >
                     <ArrowLeft size={24} />
                 </button>
-                <h3 className="mb-0">Grievance Timeline</h3>
+                <h3 className="mb-0">{t('timeline.title')}</h3>
             </div>
             <div className="timeline">
                 {sortedStages.map((stage, index) => (
@@ -101,13 +104,9 @@ const TimelineView = ({ grievanceId, onBack }) => {
                             {getStageIcon(stage.stageName)}
                         </div>
                         <div className="timeline-content">
-                            <h4>{stage.stageName}</h4>
+                            <h4>{t(`stage.byName.${stage.stageName}`)}</h4>
                             <p className="date">
-                                {new Date(stage.date).toLocaleDateString('en-IN', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                })}
+                                {formatDate(stage.date)}
                             </p>
                             <p className="description">{stage.description}</p>
                         </div>

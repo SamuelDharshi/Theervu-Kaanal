@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/NavBar';
@@ -10,6 +11,7 @@ import LocationDropdowns from '../components/LocationDropdowns';
 const SubmitGrievance = () => {
     const navigate = useNavigate();
     const { user, authenticatedFetch } = useAuth();
+    const { t, speech } = useT();
     const [activeTab, setActiveTab] = useState('form'); // 'form' or 'document'
     const [formData, setFormData] = useState({
         title: '',
@@ -59,7 +61,7 @@ const SubmitGrievance = () => {
                     if (file.size > 5 * 1024 * 1024) { // 5MB limit
                         setErrors(prev => ({
                             ...prev,
-                            attachments: 'File size should not exceed 5MB'
+                            attachments: 'validation.fileTooLarge'
                         }));
                         return;
                     }
@@ -74,7 +76,7 @@ const SubmitGrievance = () => {
                 if (file.size > 5 * 1024 * 1024) {
                     setErrors(prev => ({
                         ...prev,
-                        document: 'File size should not exceed 5MB'
+                        document: 'validation.fileTooLarge'
                     }));
                     return;
                 }
@@ -83,7 +85,7 @@ const SubmitGrievance = () => {
                 if (!fileType.match(/^(image\/(jpeg|png|jpg)|application\/pdf)$/)) {
                     setErrors(prev => ({
                         ...prev,
-                        document: 'Only PDF, JPG, and PNG files are supported'
+                        document: 'validation.fileType'
                     }));
                     return;
                 }
@@ -101,7 +103,7 @@ const SubmitGrievance = () => {
 
     const handleVoiceInput = () => {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            toast.error('Voice input is not supported in this browser.');
+            toast.error(t('submit.voiceUnsupported'));
             return;
         }
         if (recognitionActive) {
@@ -111,11 +113,12 @@ const SubmitGrievance = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!recognitionRef.current) {
             recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.lang = 'en-US';
             recognitionRef.current.interimResults = false;
             recognitionRef.current.maxAlternatives = 1;
         }
         const recognition = recognitionRef.current;
+        // Listen in the language the petitioner is using the portal in.
+        recognition.lang = speech;
         recognition.onstart = () => {
             setIsListening(true);
             setRecognitionActive(true);
@@ -127,7 +130,7 @@ const SubmitGrievance = () => {
         recognition.onerror = (event) => {
             setIsListening(false);
             setRecognitionActive(false);
-            toast.error('Voice input error: ' + event.error);
+            toast.error(t('submit.voiceError', { error: event.error }));
         };
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
@@ -145,31 +148,31 @@ const SubmitGrievance = () => {
 
         // Common validations for both form and document
         if (activeTab === 'form' && !formData.department) {
-            newErrors.department = 'Department is required';
+            newErrors.department = 'validation.departmentRequired';
         }
 
         // Form-specific validations
         if (activeTab === 'form') {
             if (!formData.title.trim()) {
-                newErrors.title = 'Title is required';
+                newErrors.title = 'validation.titleRequired';
             }
             if (!formData.description.trim()) {
-                newErrors.description = 'Description is required';
+                newErrors.description = 'validation.descriptionRequired';
             }
             if (!formData.taluk.trim()) {
-                newErrors.taluk = 'Taluk is required';
+                newErrors.taluk = 'validation.talukRequired';
             }
             if (!formData.district.trim()) {
-                newErrors.district = 'District is required';
+                newErrors.district = 'validation.districtRequired';
             }
             if (!formData.division.trim()) {
-                newErrors.division = 'Division is required';
+                newErrors.division = 'validation.divisionRequired';
             }
         }
         // Document-specific validations
         else {
             if (!documentFile) {
-                newErrors.document = 'Please upload a document';
+                newErrors.document = 'validation.documentRequired';
             }
         }
 
@@ -248,17 +251,17 @@ const SubmitGrievance = () => {
                     attachments: []
                 });
                 setDocumentFile(null);
-                toast.success('Grievance submitted successfully!');
+                toast.success(t('submit.success'));
 
                 // Show extracted information if available
                 if (data.extractedData) {
-                    toast.success('Successfully extracted information from document');
+                    toast.success(t('submit.extracted'));
                 }
 
                 setTimeout(() => {
                     navigate('/petitioner/dashboard', {
                         state: {
-                            message: 'Grievance submitted successfully!',
+                            message: t('submit.success'),
                             type: 'success'
                         }
                     });
@@ -267,8 +270,8 @@ const SubmitGrievance = () => {
         } catch (error) {
             console.error('Submission error:', error);
             const errorMessage = error.message === 'Session expired. Please log in again.'
-                ? 'Your session has expired. Please log in again to submit your grievance.'
-                : error.message || 'Failed to submit grievance. Please try again.';
+                ? t('submit.sessionExpired')
+                : error.message || t('submit.failed');
 
             setSubmitError(errorMessage);
             toast.error(errorMessage);
@@ -294,7 +297,7 @@ const SubmitGrievance = () => {
                     <div className="col-12 col-md-8">
                         <div className="card shadow">
                             <div className="card-body">
-                                <h2 className="text-center mb-4">Submit New Grievance</h2>
+                                <h2 className="text-center mb-4">{t('submit.title')}</h2>
 
                                 {/* Tab Navigation */}
                                 <div className="nav nav-tabs mb-4 flex-column flex-sm-row" role="tablist">
@@ -304,7 +307,7 @@ const SubmitGrievance = () => {
                                         type="button"
                                     >
                                         <FileText className="me-2" size={18} />
-                                        Fill Form
+                                        {t('submit.fillForm')}
                                     </button>
                                     <button
                                         className={`nav-link ${activeTab === 'document' ? 'active' : ''}`}
@@ -312,7 +315,7 @@ const SubmitGrievance = () => {
                                         type="button"
                                     >
                                         <Upload className="me-2" size={18} />
-                                        Upload Document
+                                        {t('submit.uploadDocument')}
                                     </button>
                                 </div>
 
@@ -325,10 +328,10 @@ const SubmitGrievance = () => {
                                 <form onSubmit={handleSubmit}>
                                     {/* Petitioner Details Section */}
                                     <div className="mb-4">
-                                        <h5>Petitioner Details</h5>
+                                        <h5>{t('submit.petitionerDetails')}</h5>
                                         <div className="row">
                                             <div className="col-md-6 mb-3">
-                                                <label className="form-label">Name</label>
+                                                <label className="form-label">{t('form.name')}</label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
@@ -337,7 +340,7 @@ const SubmitGrievance = () => {
                                                 />
                                             </div>
                                             <div className="col-md-6 mb-3">
-                                                <label className="form-label">Email</label>
+                                                <label className="form-label">{t('form.email')}</label>
                                                 <input
                                                     type="email"
                                                     className="form-control"
@@ -351,35 +354,35 @@ const SubmitGrievance = () => {
                                     {/* Form-based Input */}
                                     {activeTab === 'form' && (
                                         <div className="mb-4">
-                                            <h5>Grievance Details</h5>
+                                            <h5>{t('submit.grievanceDetails')}</h5>
 
                                             <div className="mb-3">
-                                                <label className="form-label">Title*</label>
+                                                <label className="form-label">{t('form.title')}*</label>
                                                 <input
                                                     type="text"
                                                     className={`form-control ${errors.title ? 'is-invalid' : ''}`}
                                                     name="title"
                                                     value={formData.title}
                                                     onChange={handleChange}
-                                                    placeholder="Enter grievance title"
+                                                    placeholder={t('submit.titlePlaceholder')}
                                                 />
-                                                {errors.title && <div className="invalid-feedback">{errors.title}</div>}
+                                                {errors.title && <div className="invalid-feedback">{t(errors.title)}</div>}
                                             </div>
 
                                             <div className="mb-3">
-                                                <label className="form-label">Department*</label>
+                                                <label className="form-label">{t('common.department')}*</label>
                                                 <select
                                                     className={`form-select ${errors.department ? 'is-invalid' : ''}`}
                                                     name="department"
                                                     value={formData.department}
                                                     onChange={handleChange}
                                                 >
-                                                    <option value="">Select Department</option>
-                                                    <option value="Water">Water Department</option>
-                                                    <option value="RTO">RTO</option>
-                                                    <option value="Electricity">Electricity Department</option>
+                                                    <option value="">{t('form.selectDepartment')}</option>
+                                                    <option value="Water">{t('dept.Water')}</option>
+                                                    <option value="RTO">{t('dept.RTO')}</option>
+                                                    <option value="Electricity">{t('dept.Electricity')}</option>
                                                 </select>
-                                                {errors.department && <div className="invalid-feedback">{errors.department}</div>}
+                                                {errors.department && <div className="invalid-feedback">{t(errors.department)}</div>}
                                             </div>
 
                                             <div className="mb-3">
@@ -394,7 +397,7 @@ const SubmitGrievance = () => {
                                             </div>
 
                                             <div className="mb-3">
-                                                <label className="form-label">Description*</label>
+                                                <label className="form-label">{t('form.description')}*</label>
                                                 <div className="input-group">
                                                     <textarea
                                                         className={`form-control ${errors.description ? 'is-invalid' : ''}`}
@@ -402,25 +405,26 @@ const SubmitGrievance = () => {
                                                         value={formData.description}
                                                         onChange={handleChange}
                                                         rows="5"
-                                                        placeholder="Provide detailed description of your grievance"
+                                                        placeholder={t('submit.descriptionPlaceholder')}
                                                     ></textarea>
                                                     <button
                                                         type="button"
                                                         className={`btn btn-outline-secondary px-3${isListening ? ' active' : ''}`}
                                                         onClick={handleVoiceInput}
-                                                        title={isListening ? 'Listening...' : 'Speak your description'}
+                                                        title={isListening ? t('submit.listening') : t('submit.speak')}
+                                                        aria-label={isListening ? t('submit.listening') : t('submit.speak')}
                                                         tabIndex={-1}
                                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                     >
                                                         {isListening ? <Loader2 size={20} className="spin" /> : <Mic size={20} />}
                                                     </button>
                                                 </div>
-                                                {errors.description && <div className="invalid-feedback">{errors.description}</div>}
-                                                <div className="form-text">You can type or use voice input for the description.</div>
+                                                {errors.description && <div className="invalid-feedback">{t(errors.description)}</div>}
+                                                <div className="form-text">{t('submit.voiceHint')}</div>
                                             </div>
 
                                             <div className="mb-3">
-                                                <label className="form-label">Additional Attachments</label>
+                                                <label className="form-label">{t('submit.attachments')}</label>
                                                 <div className="input-group">
                                                     <input
                                                         type="file"
@@ -433,8 +437,8 @@ const SubmitGrievance = () => {
                                                         <Upload size={20} />
                                                     </span>
                                                 </div>
-                                                {errors.attachments && <div className="text-danger small mt-1">{errors.attachments}</div>}
-                                                <div className="form-text">Max file size: 5MB. Supported formats: PDF, DOC, DOCX, JPG, PNG</div>
+                                                {errors.attachments && <div className="text-danger small mt-1">{t(errors.attachments)}</div>}
+                                                <div className="form-text">{t('submit.attachmentsHint')}</div>
                                             </div>
                                         </div>
                                     )}
@@ -442,29 +446,28 @@ const SubmitGrievance = () => {
                                     {/* Document Upload */}
                                     {activeTab === 'document' && (
                                         <div className="mb-4">
-                                            <h5>Document Upload</h5>
+                                            <h5>{t('submit.documentUpload')}</h5>
                                             <div className="alert alert-info">
-                                                <p className="mb-0">Supported document types:</p>
+                                                <p className="mb-0">{t('submit.docTypes')}</p>
                                                 <ul className="mb-0">
-                                                    <li>Handwritten Tamil</li>
-                                                    <li>Digitalized Tamil text</li>
-                                                    <li>Digitalized English text</li>
-                                                    <li>Handwritten English text</li>
+                                                    {['handTamil', 'typedTamil', 'typedEnglish', 'handEnglish'].map((k) => (
+                                                        <li key={k}>{t(`submit.docType.${k}`)}</li>
+                                                    ))}
                                                 </ul>
-                                                <p className="mt-2 mb-0"><strong>Note:</strong> Location details (taluk, district, division) will be automatically extracted from the document.</p>
+                                                <p className="mt-2 mb-0"><strong>{t('common.note')}</strong> {t('submit.docNote')}</p>
                                             </div>
 
                                             <div className="mb-3">
-                                                <label className="form-label">Document*</label>
+                                                <label className="form-label">{t('submit.document')}*</label>
                                                 <input
                                                     type="file"
                                                     className={`form-control ${errors.document ? 'is-invalid' : ''}`}
                                                     onChange={handleFileChange}
                                                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff,.bmp"
                                                 />
-                                                {errors.document && <div className="invalid-feedback">{errors.document}</div>}
+                                                {errors.document && <div className="invalid-feedback">{t(errors.document)}</div>}
                                                 <div className="form-text">
-                                                    Supported formats: PDF, Word, Images (jpg, png, etc.)
+                                                    {t('submit.documentHint')}
                                                 </div>
                                             </div>
                                         </div>
@@ -476,14 +479,14 @@ const SubmitGrievance = () => {
                                             className="btn btn-primary btn-lg"
                                             disabled={isSubmitting}
                                         >
-                                            {isSubmitting ? 'Submitting...' : 'Submit Grievance'}
+                                            {isSubmitting ? t('submit.submitting') : t('submit.submit')}
                                         </button>
                                         <button
                                             type="button"
                                             className="btn btn-outline-secondary"
                                             onClick={() => navigate('/petitioner/dashboard')}
                                         >
-                                            Cancel
+                                            {t('common.cancel')}
                                         </button>
                                     </div>
                                 </form>

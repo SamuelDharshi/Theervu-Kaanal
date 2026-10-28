@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { StreamChat } from 'stream-chat';
 import {
     Chat,
@@ -8,6 +9,7 @@ import {
     MessageInput,
     Window,
     Thread,
+    Streami18n,
 } from 'stream-chat-react';
 import 'stream-chat-react/dist/css/v2/index.css';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +29,9 @@ const getChatClient = () => {
 
 const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
     const { user } = useAuth();
+    const { t, lang } = useT();
+    // Stream ships Hindi but not Tamil; Tamil keeps Stream's English labels.
+    const chatI18n = useMemo(() => new Streami18n({ language: lang === 'hi' ? 'hi' : 'en' }), [lang]);
     const [channel, setChannel] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -225,7 +230,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
     if (error) {
         return (
             <div className="text-red-500 p-4">
-                <h4>Chat Error:</h4>
+                <h4>{t('chat.error')}</h4>
                 <p>{error}</p>
                 <button
                     onClick={() => {
@@ -238,7 +243,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
                     }}
                     className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                    Retry
+                    {t('common.retry')}
                 </button>
             </div>
         );
@@ -249,7 +254,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
             <div className="flex items-center justify-center h-[600px]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-4">Initializing chat...</p>
+                    <p className="mt-4">{t('chat.starting')}</p>
                 </div>
             </div>
         );
@@ -258,7 +263,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
     if (!channel) {
         return (
             <div className="text-red-500 p-4">
-                <p>Failed to initialize chat. Please try again.</p>
+                <p>{t('chat.failed')}</p>
                 <button
                     onClick={() => {
                         setError(null);
@@ -270,7 +275,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
                     }}
                     className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                    Retry
+                    {t('common.retry')}
                 </button>
             </div>
         );
@@ -278,7 +283,7 @@ const ChatComponent = ({ grievanceId, petitionerId, officialId }) => {
 
     return (
         <div className="h-[600px]">
-            <Chat client={clientRef.current} theme="messaging light">
+            <Chat client={clientRef.current} theme="messaging light" i18nInstance={chatI18n}>
                 <Channel channel={channel}>
                     <Window>
                         <ChannelHeader />

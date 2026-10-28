@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useT } from '../i18n/LanguageContext';
 import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import { ArrowRight } from "lucide-react";
@@ -6,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 const AdminLogin = () => {
     const { login } = useAuth();
+    const { t } = useT();
     const [formData, setFormData] = useState({ adminId: "", email: "", password: "" });
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState("");
@@ -23,20 +25,20 @@ const AdminLogin = () => {
         let formIsValid = true;
 
         if (!formData.adminId.trim()) {
-            tempErrors.adminId = "Admin ID is required";
+            tempErrors.adminId = "validation.adminIdRequired";
             formIsValid = false;
         }
 
         if (!formData.email.trim()) {
-            tempErrors.email = "Email is required";
+            tempErrors.email = "validation.emailRequired";
             formIsValid = false;
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            tempErrors.email = "Invalid email format";
+            tempErrors.email = "validation.emailInvalid";
             formIsValid = false;
         }
 
         if (!formData.password) {
-            tempErrors.password = "Password is required";
+            tempErrors.password = "validation.passwordRequired";
             formIsValid = false;
         }
 
@@ -52,23 +54,23 @@ const AdminLogin = () => {
             // Use the AuthContext login function directly
             await login(formData.email, formData.password, null, null, formData.adminId);
         } catch (error) {
-            setServerError(error.message || "Login failed");
+            setServerError(error.message || t('common.loginFailed'));
         }
     };
 
     return (
         <AuthShell
-            role="For the grievance cell: escalations, analytics and Smart Query"
-            title="Grievance cell sign in"
-            lede="Escalated petitions land here first."
+            role={t('login.admin.role')}
+            title={t('login.admin.title')}
+            lede={t('login.admin.lede')}
             back="/login"
-            backLabel="All sign-in options"
+            backLabel={t('login.allOptions')}
             accentThread={5}
         >
             {serverError && <div className="alert alert-danger" role="alert">{serverError}</div>}
             <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
-                    <label htmlFor="adminId" className="form-label">Admin ID</label>
+                    <label htmlFor="adminId" className="form-label">{t('form.adminId')}</label>
                     <input
                         type="text"
                         className={`form-control ${errors.adminId ? "is-invalid" : ""}`}
@@ -78,10 +80,10 @@ const AdminLogin = () => {
                         onChange={handleChange}
                         autoComplete="username"
                     />
-                    {errors.adminId && <div className="invalid-feedback">{errors.adminId}</div>}
+                    {errors.adminId && <div className="invalid-feedback">{t(errors.adminId)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
+                    <label htmlFor="email" className="form-label">{t('form.email')}</label>
                     <input
                         type="email"
                         className={`form-control ${errors.email ? "is-invalid" : ""}`}
@@ -91,10 +93,10 @@ const AdminLogin = () => {
                         onChange={handleChange}
                         autoComplete="email"
                     />
-                    {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    {errors.email && <div className="invalid-feedback">{t(errors.email)}</div>}
                 </div>
                 <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
+                    <label htmlFor="password" className="form-label">{t('form.password')}</label>
                     <input
                         type="password"
                         className={`form-control ${errors.password ? "is-invalid" : ""}`}
@@ -104,13 +106,13 @@ const AdminLogin = () => {
                         onChange={handleChange}
                         autoComplete="current-password"
                     />
-                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                    {errors.password && <div className="invalid-feedback">{t(errors.password)}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary btn-lg tk-auth__submit">
-                    Sign in <ArrowRight size={18} aria-hidden="true" />
+                    {t('nav.signIn')} <ArrowRight size={18} aria-hidden="true" />
                 </button>
             </form>
-            <p className="tk-auth__alt">Need access? <Link to="/register/admin">Register as an admin</Link></p>
+            <p className="tk-auth__alt">{t('login.admin.needAccess')} <Link to="/register/admin">{t('login.admin.registerLink')}</Link></p>
         </AuthShell>
     );
 };

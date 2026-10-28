@@ -4,11 +4,13 @@ import NavBar from '../components/NavBar';
 import Footer from '../shared/Footer';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Mail, Edit, Phone, UserCheck, Sun, Moon } from 'lucide-react';
+import { User, Lock, Mail, Edit, Phone, UserCheck, Sun, Moon, Languages } from 'lucide-react';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
 import { useTheme } from '../context/ThemeContext';
 
 const Settings = () => {
     const { user, authenticatedFetch } = useAuth();
+    const { t } = useT();
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
@@ -33,7 +35,7 @@ const Settings = () => {
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 email: user.email || '',
-                phone: user.phone || 'Not provided',
+                phone: user.phone || t('settings.notProvided'),
                 department: user.department || user.role || '',
                 id: user.employeeId || user.adminId || user.id || ''
             });
@@ -70,7 +72,7 @@ const Settings = () => {
     const handlePasswordChange = async (e) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('New passwords do not match');
+            toast.error(t('validation.passwordMismatch'));
             return;
         }
 
@@ -88,17 +90,17 @@ const Settings = () => {
             });
             const data = await response.json();
             if (response.ok) {
-                toast.success('Password updated successfully');
+                toast.success(t('settings.passwordUpdated'));
                 setPasswordData({
                     currentPassword: '',
                     newPassword: '',
                     confirmPassword: ''
                 });
             } else {
-                toast.error(data.message || 'Failed to update password');
+                toast.error(data.message || t('settings.passwordFailed'));
             }
         } catch (error) {
-            toast.error(error.message || 'Failed to update password');
+            toast.error(error.message || t('settings.passwordFailed'));
             console.error('Password update error:', error);
         } finally {
             setLoading(false);
@@ -117,19 +119,25 @@ const Settings = () => {
                                     className={`list-group-item list-group-item-action d-flex align-items-center ${activeTab === 'profile' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('profile')}
                                 >
-                                    <User className="me-3" /> Profile Information
+                                    <User className="me-3" /> {t('settings.profile')}
                                 </button>
                                 <button
                                     className={`list-group-item list-group-item-action d-flex align-items-center ${activeTab === 'password' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('password')}
                                 >
-                                    <Lock className="me-3" /> Password Management
+                                    <Lock className="me-3" /> {t('settings.password')}
                                 </button>
                                 <button
                                     className={`list-group-item list-group-item-action d-flex align-items-center ${activeTab === 'theme' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('theme')}
                                 >
-                                    <Sun className="me-3" /> Theme
+                                    <Sun className="me-3" /> {t('settings.theme')}
+                                </button>
+                                <button
+                                    className={`list-group-item list-group-item-action d-flex align-items-center ${activeTab === 'language' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('language')}
+                                >
+                                    <Languages className="me-3" /> {t('common.language')}
                                 </button>
                             </div>
                         </div>
@@ -139,9 +147,9 @@ const Settings = () => {
                         {activeTab === 'profile' && (
                             <div className={`card shadow-sm ${theme === 'dark' ? 'text-bg-dark' : ''}`}>
                                 <div className="card-header bg-body-tertiary d-flex justify-content-between align-items-center">
-                                    <h3 className="mb-0">Profile Information</h3>
+                                    <h3 className="mb-0">{t('settings.profile')}</h3>
                                     <button className="btn btn-outline-primary btn-sm" onClick={handleUpdateProfileClick}>
-                                        <Edit className="me-1" size={16} /> Edit Profile
+                                        <Edit className="me-1" size={16} /> {t('settings.editProfile')}
                                     </button>
                                 </div>
                                 <div className="card-body">
@@ -153,7 +161,7 @@ const Settings = () => {
                                         />
                                         <div>
                                             <h4 className="mb-0">{`${profileData.firstName} ${profileData.lastName}`}</h4>
-                                            <p className="text-muted mb-0">{profileData.department}</p>
+                                            <p className="text-muted mb-0">{profileData.department ? t(`dept.${profileData.department}`) : ''}</p>
                                         </div>
                                     </div>
                                     <ul className="list-group list-group-flush">
@@ -167,7 +175,7 @@ const Settings = () => {
                                         </li>
                                         <li className="list-group-item d-flex align-items-center">
                                             <UserCheck className="me-3 text-primary" />
-                                            <span>ID: {profileData.id}</span>
+                                            <span>{t('settings.id')}: {profileData.id}</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -176,12 +184,12 @@ const Settings = () => {
                         {activeTab === 'password' && (
                             <div className={`card shadow-sm ${theme === 'dark' ? 'text-bg-dark' : ''}`}>
                                 <div className="card-header bg-body-tertiary">
-                                    <h3 className="mb-0">Password Management</h3>
+                                    <h3 className="mb-0">{t('settings.password')}</h3>
                                 </div>
                                 <div className="card-body">
                                     <form onSubmit={handlePasswordChange}>
                                         <div className="mb-3">
-                                            <label className="form-label">Current Password</label>
+                                            <label className="form-label">{t('settings.currentPassword')}</label>
                                             <div className="input-group">
                                                 <span className="input-group-text"><Lock /></span>
                                                 <input
@@ -189,12 +197,12 @@ const Settings = () => {
                                                     className="form-control"
                                                     value={passwordData.currentPassword}
                                                     onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                                    placeholder="Enter current password"
+                                                    placeholder={t('settings.currentPassword')}
                                                 />
                                             </div>
                                         </div>
                                         <div className="mb-3">
-                                            <label className="form-label">New Password</label>
+                                            <label className="form-label">{t('settings.newPassword')}</label>
                                             <div className="input-group">
                                                 <span className="input-group-text"><Lock /></span>
                                                 <input
@@ -202,12 +210,12 @@ const Settings = () => {
                                                     className="form-control"
                                                     value={passwordData.newPassword}
                                                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                                    placeholder="Enter new password"
+                                                    placeholder={t('settings.newPassword')}
                                                 />
                                             </div>
                                         </div>
                                         <div className="mb-3">
-                                            <label className="form-label">Confirm New Password</label>
+                                            <label className="form-label">{t('settings.confirmNewPassword')}</label>
                                             <div className="input-group">
                                                 <span className="input-group-text"><Lock /></span>
                                                 <input
@@ -215,12 +223,12 @@ const Settings = () => {
                                                     className="form-control"
                                                     value={passwordData.confirmPassword}
                                                     onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                                    placeholder="Confirm new password"
+                                                    placeholder={t('settings.confirmNewPassword')}
                                                 />
                                             </div>
                                         </div>
                                         <button type="submit" className="btn btn-primary" disabled={loading}>
-                                            {loading ? 'Updating...' : 'Change Password'}
+                                            {loading ? t('common.updating') : t('settings.changePassword')}
                                         </button>
                                     </form>
                                 </div>
@@ -229,24 +237,35 @@ const Settings = () => {
                         {activeTab === 'theme' && (
                             <div className={`card shadow-sm ${theme === 'dark' ? 'text-bg-dark' : ''}`}>
                                 <div className="card-header bg-body-tertiary">
-                                    <h3 className="mb-0">Theme Settings</h3>
+                                    <h3 className="mb-0">{t('settings.theme')}</h3>
                                 </div>
                                 <div className="card-body">
-                                    <p>Select your preferred theme.</p>
+                                    <p>{t('settings.themeLede')}</p>
                                     <div className="d-flex gap-3">
                                         <button 
                                             className={`btn ${theme === 'light' ? 'btn-primary' : 'btn-outline-secondary'} d-flex align-items-center`}
                                             onClick={() => setTheme('light')}
                                         >
-                                            <Sun className="me-2" /> Light
+                                            <Sun className="me-2" /> {t('settings.light')}
                                         </button>
                                         <button 
                                             className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-outline-secondary'} d-flex align-items-center`}
                                             onClick={() => setTheme('dark')}
                                         >
-                                            <Moon className="me-2" /> Dark
+                                            <Moon className="me-2" /> {t('settings.dark')}
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'language' && (
+                            <div className={`card shadow-sm ${theme === 'dark' ? 'text-bg-dark' : ''}`}>
+                                <div className="card-header bg-body-tertiary">
+                                    <h3 className="mb-0">{t('common.language')}</h3>
+                                </div>
+                                <div className="card-body">
+                                    <p>{t('settings.languageLede')}</p>
+                                    <LanguageSwitcher className="tk-lang--large" />
                                 </div>
                             </div>
                         )}

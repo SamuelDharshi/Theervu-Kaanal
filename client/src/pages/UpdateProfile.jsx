@@ -9,6 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const UpdateProfile = () => {
     const { user, authenticatedFetch, updateUser } = useAuth();
+    const { t } = useT();
     const { theme } = useTheme();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -67,11 +68,11 @@ const UpdateProfile = () => {
 
             const updatedUser = await response.json();
             updateUser(updatedUser);
-            toast.success('Profile updated successfully');
+            toast.success(t('settings.profileUpdated'));
             navigate(getSettingsPath());
 
         } catch (error) {
-            toast.error(error.message || 'Failed to update profile');
+            toast.error(error.message || t('settings.profileFailed'));
             console.error('Profile update error:', error);
         } finally {
             setLoading(false);
@@ -91,7 +92,7 @@ const UpdateProfile = () => {
                     <div className="col-12 col-md-8 col-lg-6">
                         <div className={`card shadow-sm ${theme === 'dark' ? 'text-bg-dark' : ''}`}>
                             <div className="card-header bg-body-tertiary">
-                                <h3 className="mb-0">Update Profile</h3>
+                                <h3 className="mb-0">{t('settings.editProfile')}</h3>
                             </div>
                             <div className="card-body">
                                 <form onSubmit={handleProfileUpdate}>
@@ -103,7 +104,7 @@ const UpdateProfile = () => {
                                         />
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="firstName" className="form-label">First Name</label>
+                                        <label htmlFor="firstName" className="form-label">{t('form.firstName')}</label>
                                         <div className="input-group">
                                             <span className="input-group-text"><User /></span>
                                             <input
@@ -117,7 +118,7 @@ const UpdateProfile = () => {
                                         </div>
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="lastName" className="form-label">Last Name</label>
+                                        <label htmlFor="lastName" className="form-label">{t('form.lastName')}</label>
                                         <div className="input-group">
                                             <span className="input-group-text"><User /></span>
                                             <input
@@ -131,7 +132,7 @@ const UpdateProfile = () => {
                                         </div>
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="email" className="form-label">Email</label>
+                                        <label htmlFor="email" className="form-label">{t('form.email')}</label>
                                         <div className="input-group">
                                             <span className="input-group-text"><Mail /></span>
                                             <input
@@ -145,7 +146,7 @@ const UpdateProfile = () => {
                                         </div>
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="phone" className="form-label">Phone</label>
+                                        <label htmlFor="phone" className="form-label">{t('form.phone')}</label>
                                         <div className="input-group">
                                             <span className="input-group-text"><Phone /></span>
                                             <input
@@ -160,7 +161,7 @@ const UpdateProfile = () => {
                                     </div>
                                     <button type="submit" className="btn btn-primary w-100" disabled={loading}>
                                         <Save className="me-2" size={16} />
-                                        {loading ? 'Updating...' : 'Save Changes'}
+                                        {loading ? t('common.updating') : t('settings.save')}
                                     </button>
                                 </form>
                             </div>

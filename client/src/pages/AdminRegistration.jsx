@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate, Link, Link as RouterLink } from 'react-router-dom';
 import AuthShell from '../components/AuthShell';
 import toast from 'react-hot-toast';
@@ -6,6 +7,7 @@ import { API_BASE } from '../config';
 
 const AdminRegistration = () => {
   const navigate = useNavigate();
+  const { t } = useT();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -33,54 +35,54 @@ const AdminRegistration = () => {
     let formIsValid = true;
 
     if (!formData.firstName.trim()) {
-      tempErrors.firstName = 'First name is required';
+      tempErrors.firstName = 'validation.firstNameRequired';
       formIsValid = false;
     }
 
     if (!formData.lastName.trim()) {
-      tempErrors.lastName = 'Last name is required';
+      tempErrors.lastName = 'validation.lastNameRequired';
       formIsValid = false;
     }
 
     if (!formData.email.trim()) {
-      tempErrors.email = 'Email is required';
+      tempErrors.email = 'validation.emailRequired';
       formIsValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      tempErrors.email = 'Email is invalid';
+      tempErrors.email = 'validation.emailInvalid';
       formIsValid = false;
     }
 
     if (!formData.phone.trim()) {
-      tempErrors.phone = 'Phone number is required';
+      tempErrors.phone = 'validation.phoneRequired';
       formIsValid = false;
     } else if (!/^\d{10}$/.test(formData.phone)) {
-      tempErrors.phone = 'Phone number must be 10 digits';
+      tempErrors.phone = 'validation.phoneDigits';
       formIsValid = false;
     }
 
     if (!formData.adminId.trim()) {
-      tempErrors.adminId = 'Admin ID is required';
+      tempErrors.adminId = 'validation.adminIdRequired';
       formIsValid = false;
     }
 
     if (!formData.position.trim()) {
-      tempErrors.position = 'Position is required';
+      tempErrors.position = 'validation.positionRequired';
       formIsValid = false;
     }
 
     if (!formData.password) {
-      tempErrors.password = 'Password is required';
+      tempErrors.password = 'validation.passwordRequired';
       formIsValid = false;
     } else if (formData.password.length < 8) {
-      tempErrors.password = 'Password must be at least 8 characters';
+      tempErrors.password = 'validation.passwordMin8';
       formIsValid = false;
     } else if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])/.test(formData.password)) {
-      tempErrors.password = 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character';
+      tempErrors.password = 'validation.passwordComplex';
       formIsValid = false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      tempErrors.confirmPassword = 'Passwords do not match';
+      tempErrors.confirmPassword = 'validation.passwordMismatch';
       formIsValid = false;
     }
 
@@ -104,14 +106,14 @@ const AdminRegistration = () => {
         const data = await response.json();
 
         if (response.ok) {
-          toast.success('Registration successful! You can login.');
+          toast.success(t('register.success'));
           navigate('/login/admin'); // Redirect to login after successful registration
         } else {
-          toast.error(data.message || 'Registration failed. Please try again.');
+          toast.error(data.message || t('register.failed'));
         }
       } catch (error) {
         console.error('Error submitting form:', error);
-        toast.error('An error occurred while submitting the form.');
+        toast.error(t('common.serverError'));
       }
     }
   };
@@ -119,23 +121,23 @@ const AdminRegistration = () => {
 
   return (
     <AuthShell
-      role="For the grievance cell: escalations, analytics and Smart Query"
-      title="Register for the grievance cell"
-      lede="Admin accounts need a valid security key and are verified."
+      role={t('login.admin.role')}
+      title={t('register.admin.title')}
+      lede={t('register.admin.lede')}
       back="/register"
-      backLabel="All account types"
+      backLabel={t('register.allTypes')}
       accentThread={5}
       wide
     >
 
       <div className="alert alert-warning" role="alert">
-        <strong>Important:</strong> Admin accounts have full administrative access to the system. Registration requires a valid security key and will be subject to verification.
+        <strong>{t('register.admin.importantLabel')}</strong> {t('register.admin.important')}
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="row g-3">
           <div className="col-md-6">
-            <label htmlFor="firstName" className="form-label">First Name*</label>
+            <label htmlFor="firstName" className="form-label">{t('form.firstName')}*</label>
             <input
               type="text"
               className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
@@ -144,11 +146,11 @@ const AdminRegistration = () => {
               value={formData.firstName}
               onChange={handleChange}
             />
-            {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+            {errors.firstName && <div className="invalid-feedback">{t(errors.firstName)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="lastName" className="form-label">Last Name*</label>
+            <label htmlFor="lastName" className="form-label">{t('form.lastName')}*</label>
             <input
               type="text"
               className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
@@ -157,13 +159,13 @@ const AdminRegistration = () => {
               value={formData.lastName}
               onChange={handleChange}
             />
-            {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+            {errors.lastName && <div className="invalid-feedback">{t(errors.lastName)}</div>}
           </div>
         </div>
 
         <div className="row g-3 mt-1">
           <div className="col-md-6">
-            <label htmlFor="email" className="form-label">Email*</label>
+            <label htmlFor="email" className="form-label">{t('form.email')}*</label>
             <input
               type="email"
               className={`form-control ${errors.email ? 'is-invalid' : ''}`}
@@ -172,11 +174,11 @@ const AdminRegistration = () => {
               value={formData.email}
               onChange={handleChange}
             />
-            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+            {errors.email && <div className="invalid-feedback">{t(errors.email)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="phone" className="form-label">Phone*</label>
+            <label htmlFor="phone" className="form-label">{t('form.phone')}*</label>
             <input
               type="tel"
               className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
@@ -185,13 +187,13 @@ const AdminRegistration = () => {
               value={formData.phone}
               onChange={handleChange}
             />
-            {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+            {errors.phone && <div className="invalid-feedback">{t(errors.phone)}</div>}
           </div>
         </div>
 
         <div className="row g-3 mt-1">
           <div className="col-md-6">
-            <label htmlFor="adminId" className="form-label">Admin ID*</label>
+            <label htmlFor="adminId" className="form-label">{t('form.adminId')}*</label>
             <input
               type="text"
               className={`form-control ${errors.adminId ? 'is-invalid' : ''}`}
@@ -199,13 +201,13 @@ const AdminRegistration = () => {
               name="adminId"
               value={formData.adminId}
               onChange={handleChange}
-              placeholder="e.g. ADM0001"
+              placeholder={t('register.admin.adminIdPlaceholder')}
             />
-            {errors.adminId && <div className="invalid-feedback">{errors.adminId}</div>}
+            {errors.adminId && <div className="invalid-feedback">{t(errors.adminId)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="position" className="form-label">Position*</label>
+            <label htmlFor="position" className="form-label">{t('form.position')}*</label>
             <input
               type="text"
               className={`form-control ${errors.position ? 'is-invalid' : ''}`}
@@ -213,14 +215,14 @@ const AdminRegistration = () => {
               name="position"
               value={formData.position}
               onChange={handleChange}
-              placeholder="e.g. System Administrator, IT Director"
+              placeholder={t('register.admin.positionPlaceholder')}
             />
-            {errors.position && <div className="invalid-feedback">{errors.position}</div>}
+            {errors.position && <div className="invalid-feedback">{t(errors.position)}</div>}
           </div>
         </div>
 
         {/* <div className="mt-3"> */}
-        {/* <label htmlFor="securityKey" className="form-label">Security Key*</label> */}
+        {/* <label htmlFor="securityKey" className="form-label">{t('form.securityKey')}*</label> */}
         {/* <input
             type="password"
             className={`form-control ${errors.securityKey ? 'is-invalid' : ''}`}
@@ -230,13 +232,13 @@ const AdminRegistration = () => {
             onChange={handleChange}
             placeholder="Enter your administrator security key"
           /> */}
-        {/* {errors.securityKey && <div className="invalid-feedback">{errors.securityKey}</div>}
+        {/* {errors.securityKey && <div className="invalid-feedback">{t(errors.securityKey)}</div>}
           <small className="form-text text-muted">The security key is provided by existing administrators.</small>
         </div> */}
 
         <div className="row g-3 mt-3">
           <div className="col-md-6">
-            <label htmlFor="password" className="form-label">Password*</label>
+            <label htmlFor="password" className="form-label">{t('form.password')}*</label>
             <input
               type="password"
               className={`form-control ${errors.password ? 'is-invalid' : ''}`}
@@ -245,12 +247,12 @@ const AdminRegistration = () => {
               value={formData.password}
               onChange={handleChange}
             />
-            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+            {errors.password && <div className="invalid-feedback">{t(errors.password)}</div>}
             <small className="form-text text-muted">Password must be at least 8 characters and include uppercase, lowercase, number, and special character.</small>
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="confirmPassword" className="form-label">Confirm Password*</label>
+            <label htmlFor="confirmPassword" className="form-label">{t('form.confirmPassword')}*</label>
             <input
               type="password"
               className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
@@ -259,7 +261,7 @@ const AdminRegistration = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
             />
-            {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            {errors.confirmPassword && <div className="invalid-feedback">{t(errors.confirmPassword)}</div>}
           </div>
         </div>
 
@@ -273,7 +275,7 @@ const AdminRegistration = () => {
                 required
               />
               <label className="form-check-label" htmlFor="terms">
-                I agree to the <RouterLink to="/terms-and-conditions" target="_blank">Terms of Service</RouterLink>, <RouterLink to="/privacy-policy" target="_blank">Privacy Policy</RouterLink>, and Security Protocols
+                {t('register.agreeBefore')} <RouterLink to="/terms-and-conditions" target="_blank">{t('register.termsOfService')}</RouterLink>, <RouterLink to="/privacy-policy" target="_blank">{t('footer.privacy')}</RouterLink> {t('register.admin.andSecurity')}
               </label>
             </div>
 
@@ -285,7 +287,7 @@ const AdminRegistration = () => {
                 required
               />
               <label className="form-check-label" htmlFor="responsibility">
-                I understand the responsibilities and security implications of admin access
+                {t('register.admin.responsibility')}
               </label>
             </div>
           </div>
@@ -293,12 +295,12 @@ const AdminRegistration = () => {
 
         <div className="d-grid gap-2 mt-4">
           <button type="submit" className="btn btn-danger btn-lg">
-            Register as Admin
+            {t('register.admin.submit')}
           </button>
         </div>
       </form>
       <p className="tk-auth__alt">
-        Already have an account? <Link to="/login/admin">Sign in</Link>
+        {t('register.already')} <Link to="/login/admin">{t('nav.signIn')}</Link>
       </p>
     </AuthShell>
   );

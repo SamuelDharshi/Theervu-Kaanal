@@ -28,6 +28,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './i18n/LanguageContext';
 import MotionLayer from './motion/MotionLayer';
 
 // Re-key the page wrapper per section of the app so each section replays its
@@ -48,6 +49,7 @@ function App() {
 
   return (
     <Router>
+      <LanguageProvider>
       <AuthProvider>
         <ThemeProvider>
           <Toaster
@@ -129,6 +131,7 @@ function App() {
           </PageFrame>
         </ThemeProvider>
       </AuthProvider>
+      </LanguageProvider>
     </Router>
   );
 }

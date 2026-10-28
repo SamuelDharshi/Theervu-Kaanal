@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WaterBoard.css";
 import { useAuth } from "../context/AuthContext";
+import { useT } from '../i18n/LanguageContext';
 import { FaSearch, FaUser, FaSignOutAlt, FaCheck, FaCheckCircle, FaClock, FaComments, FaTimes, FaEye, FaTools } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import ChatComponent from '../components/ChatComponent';
@@ -14,6 +15,7 @@ import { API_BASE } from '../config';
 const WaterDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t, formatDate } = useT();
   const [email, setEmail] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,23 +130,23 @@ const WaterDashboard = () => {
     if (hasHighPriority) {
       return {
         priority: 'High',
-        explanation: 'This grievance requires immediate attention due to potential health hazards or critical water supply issues.',
-        impactAssessment: 'High impact on public health and essential water services. Immediate action required.',
-        recommendedResponseTime: '24-48 hours'
+        explanation: t('official.analysis.Water.high.explanation'),
+        impactAssessment: t('official.analysis.Water.high.impact'),
+        recommendedResponseTime: t('official.analysis.highTime')
       };
     } else if (hasMediumPriority) {
       return {
         priority: 'Medium',
-        explanation: 'This grievance needs attention but is not critical.',
-        impactAssessment: 'Moderate impact on water services. Action required within standard timeframe.',
-        recommendedResponseTime: '3-5 working days'
+        explanation: t('official.analysis.Water.medium.explanation'),
+        impactAssessment: t('official.analysis.Water.medium.impact'),
+        recommendedResponseTime: t('official.analysis.mediumTime')
       };
     } else {
       return {
         priority: 'Low',
-        explanation: 'This is a routine grievance that can be handled through standard procedures.',
-        impactAssessment: 'Limited impact on water services. Can be addressed through regular maintenance.',
-        recommendedResponseTime: '7-10 working days'
+        explanation: t('official.analysis.Water.low.explanation'),
+        impactAssessment: t('official.analysis.Water.low.impact'),
+        recommendedResponseTime: t('official.analysis.lowTime')
       };
     }
   };
@@ -204,7 +206,7 @@ const WaterDashboard = () => {
 
           return {
             ...grievance,
-            grievanceId: grievance.petitionId || grievance.grievanceId || 'N/A',
+            grievanceId: grievance.petitionId || grievance.grievanceId || t('common.na'),
             title: grievance.title || 'No Title',
             description: grievance.description || 'No Description',
             createdAt: grievance.createdAt || new Date().toISOString(),
@@ -222,7 +224,7 @@ const WaterDashboard = () => {
           const localPriorityData = analyzePriorityLocally(grievance);
           return {
             ...grievance,
-            grievanceId: grievance.petitionId || grievance.grievanceId || 'N/A',
+            grievanceId: grievance.petitionId || grievance.grievanceId || t('common.na'),
             title: grievance.title || 'No Title',
             description: grievance.description || 'No Description',
             createdAt: grievance.createdAt || new Date().toISOString(),
@@ -253,7 +255,7 @@ const WaterDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching grievances:', error);
-      setError('Failed to load grievances. Please try again later.');
+      setError(t('petitioner.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -280,10 +282,10 @@ const WaterDashboard = () => {
       // Refresh data
       fetchGrievances();
       setActiveTab('assigned');
-      toast.success('Grievance accepted successfully');
+      toast.success(t('official.accepted'));
     } catch (error) {
       console.error('Error accepting grievance:', error);
-      toast.error('Failed to accept grievance');
+      toast.error(t('official.acceptFailed'));
     }
   };
 
@@ -304,12 +306,12 @@ const WaterDashboard = () => {
       if (!response.ok) throw new Error('Failed to submit resource management');
 
       setShowResourceModal(false);
-      toast.success('Resource management details submitted successfully');
+      toast.success(t('official.resourceSaved'));
 
       fetchGrievances();
     } catch (error) {
       console.error('Error submitting resource management:', error);
-      toast.error('Failed to submit resource management details');
+      toast.error(t('official.resourceFailed'));
     }
   };
 
@@ -330,11 +332,11 @@ const WaterDashboard = () => {
       if (!response.ok) throw new Error('Failed to update timeline');
 
       setShowTimelineModal(false);
-      toast.success('Timeline updated successfully');
+      toast.success(t('official.timelineSaved'));
       fetchGrievances();
     } catch (error) {
       console.error('Error updating timeline:', error);
-      toast.error('Failed to update timeline');
+      toast.error(t('official.timelineFailed'));
     }
   };
 
@@ -389,18 +391,18 @@ const WaterDashboard = () => {
           if (resolveResponse.ok || (resolveData && resolveData.status === 'resolved')) {
             // Refresh the grievances list
             await fetchGrievances();
-            toast.success('Grievance resolved successfully');
+            toast.success(t('official.resolved'));
             return;
           }
 
           // Only throw an error if the operation actually failed
-          throw new Error(resolveData.error || 'Failed to resolve grievance');
+          throw new Error(resolveData.error || t('official.resolveFailed'));
 
         } catch (error) {
           console.error('Error in file upload:', error);
           // Only show error toast if the operation actually failed
           if (!error.message.includes('must be in progress')) {
-            toast.error(error.message || 'Failed to upload and resolve grievance');
+            toast.error(error.message || t('official.resolveFailed'));
           }
         }
       };
@@ -408,7 +410,7 @@ const WaterDashboard = () => {
       fileInput.click();
     } catch (error) {
       console.error('Error resolving grievance:', error);
-      toast.error(error.message || 'Failed to resolve grievance');
+      toast.error(error.message || t('official.resolveFailed'));
     }
   };
 
@@ -438,7 +440,7 @@ const WaterDashboard = () => {
       setSelectedGrievance(null);
     } catch (error) {
       console.error('Error declining grievance:', error);
-      setError('Failed to decline grievance. Please try again.');
+      setError(t('official.declineFailed'));
     }
   };
 
@@ -460,7 +462,7 @@ const WaterDashboard = () => {
         <div className="modal-content">
           <div className="modal-header">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Grievance Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('official.details')}</h2>
               <p className="text-sm text-gray-500 mt-1">ID: {selectedGrievance.grievanceId}</p>
             </div>
             <button
@@ -474,24 +476,24 @@ const WaterDashboard = () => {
           <div className="modal-body space-y-6">
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Priority Analysis</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('official.priorityAnalysis')}</h3>
                 <span className={getPriorityBadgeClass(selectedGrievance.priority)}>
-                  {selectedGrievance.priority || 'Not set'}
+                  {selectedGrievance.priority ? t(`priority.${selectedGrievance.priority}`) : t('common.na')}
                 </span>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.priorityExplanation || 'Priority explanation not available'}
+                {selectedGrievance.priorityExplanation || t('official.noExplanation')}
               </p>
             </div>
 
             {/* Document Viewing Section */}
             {(selectedGrievance.originalDocument || (selectedGrievance.attachments && selectedGrievance.attachments.length > 0)) && (
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Submitted Documents</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.documents')}</h3>
 
                 {selectedGrievance.originalDocument && (
                   <div className="mb-3">
-                    <h5 className="font-medium">Original Document:</h5>
+                    <h5 className="font-medium">{t('official.originalDoc')}</h5>
                     <a
                       href={`${API_BASE}/uploads/documents/${selectedGrievance.originalDocument.path.split(/[/\\]/).pop()}`}
                       target="_blank"
@@ -506,14 +508,14 @@ const WaterDashboard = () => {
                         gap: '0.5rem'
                       }}
                     >
-                      <FaEye /> View Document
+                      <FaEye /> {t('official.viewDocument')}
                     </a>
                   </div>
                 )}
 
                 {selectedGrievance.attachments && selectedGrievance.attachments.length > 0 && (
                   <div>
-                    <h5 className="font-medium">Additional Attachments:</h5>
+                    <h5 className="font-medium">{t('official.attachments')}</h5>
                     <div className="grid grid-cols-1 gap-2 mt-2">
                       {selectedGrievance.attachments.map((attachment, index) => (
                         <a
@@ -531,7 +533,7 @@ const WaterDashboard = () => {
                             gap: '0.5rem'
                           }}
                         >
-                          <FaEye /> Attachment {index + 1}
+                          <FaEye /> {t('official.attachmentN', { n: index + 1 })}
                         </a>
                       ))}
                     </div>
@@ -541,29 +543,29 @@ const WaterDashboard = () => {
             )}
 
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Impact Assessment</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.impact')}</h3>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.impactAssessment || 'Impact assessment not available'}
+                {selectedGrievance.impactAssessment || t('official.noImpact')}
               </p>
             </div>
 
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended Response Time</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.responseTime')}</h3>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.recommendedResponseTime || 'Standard response time'}
+                {selectedGrievance.recommendedResponseTime || t('official.standardTime')}
               </p>
             </div>
 
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Location Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.location')}</h3>
               <p className="text-gray-700 leading-relaxed">
-                {selectedGrievance.location || 'Location details not available'}
+                {selectedGrievance.location || t('official.noLocation')}
               </p>
             </div>
 
             {selectedGrievance.assignedTo && (
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Assigned Personnel</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('official.personnel')}</h3>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <FaUser className="text-blue-600" size={24} />
@@ -584,7 +586,7 @@ const WaterDashboard = () => {
               onClick={() => setShowDetails(false)}
               className="btn btn-secondary"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
@@ -600,7 +602,7 @@ const WaterDashboard = () => {
             <div className="flex items-center gap-3 mb-2">
               <h3 className="text-xl font-semibold text-gray-900">{grievance.title}</h3>
               <span className={getPriorityBadgeClass(grievance.priority)}>
-                {grievance.priority || 'Not set'}
+                {grievance.priority ? t(`priority.${grievance.priority}`) : t('common.na')}
               </span>
               <RepeatedCaseIndicator
                 currentGrievance={grievance}
@@ -613,11 +615,11 @@ const WaterDashboard = () => {
                 <span className="font-medium">ID:</span> {grievance.grievanceId}
               </p>
               <p className="flex items-center gap-2">
-                <span className="font-medium">Created:</span> {new Date(grievance.createdAt).toLocaleDateString()}
+                <span className="font-medium">{t('common.filed')}:</span> {formatDate(grievance.createdAt)}
               </p>
               <p className="flex items-center gap-2">
-                <span className="font-medium">Status:</span>
-                <span className={getStatusBadgeClass(grievance.status)}>{grievance.status}</span>
+                <span className="font-medium">{t('common.status')}:</span>
+                <span className={getStatusBadgeClass(grievance.status)}>{t(`status.${grievance.status}`)}</span>
               </p>
             </div>
           </div>
@@ -629,14 +631,14 @@ const WaterDashboard = () => {
               }}
               className="btn btn-primary"
             >
-              <FaEye className="mr-2" /> View Details
+              <FaEye className="mr-2" /> {t('official.viewDetails')}
             </button>
             {(activeTab === 'assigned' || activeTab === 'inProgress') && !grievance.isResolved && (
               <button
                 onClick={() => handleViewChat(grievance)}
                 className="btn btn-secondary"
               >
-                <FaComments className="mr-2" /> Chat
+                <FaComments className="mr-2" /> {t('common.chat')}
               </button>
             )}
           </div>
@@ -649,7 +651,7 @@ const WaterDashboard = () => {
                 onClick={() => handleAccept(grievance)}
                 className="btn btn-success"
               >
-                <FaCheck className="mr-2" /> Accept
+                <FaCheck className="mr-2" /> {t('official.accept')}
               </button>
               <button
                 onClick={() => {
@@ -658,7 +660,7 @@ const WaterDashboard = () => {
                 }}
                 className="btn btn-danger"
               >
-                <FaTimes className="mr-2" /> Decline
+                <FaTimes className="mr-2" /> {t('official.decline')}
               </button>
             </>
           )}
@@ -670,7 +672,7 @@ const WaterDashboard = () => {
               }}
               className="btn btn-primary"
             >
-              <FaTools className="mr-2" /> Resource Management
+              <FaTools className="mr-2" /> {t('official.resourceTitle')}
             </button>
           )}
           {activeTab === 'inProgress' && (
@@ -682,13 +684,13 @@ const WaterDashboard = () => {
                 }}
                 className="btn btn-primary"
               >
-                <FaClock className="mr-2" /> Update Timeline
+                <FaClock className="mr-2" /> {t('official.updateTimeline')}
               </button>
               <button
                 onClick={() => handleResolve(grievance._id)}
                 className="btn btn-success"
               >
-                <FaCheckCircle className="mr-2" /> Mark as Resolved
+                <FaCheckCircle className="mr-2" /> {t('official.markResolved')}
               </button>
             </>
           )}
@@ -702,9 +704,9 @@ const WaterDashboard = () => {
       {/* Header */}
       <div className="department-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
-          <h2 className="mb-0">Water Department</h2>
+          <h2 className="mb-0">{t('official.deptTitle', { dept: t('dept.Water') })}</h2>
           <span className="badge bg-info ms-2">
-            Jurisdiction: {user?.taluk || 'N/A'}, {user?.district || 'N/A'}, {user?.division || 'N/A'}
+            {t('official.jurisdiction')}: {user?.taluk || t('common.na')}, {user?.district || t('common.na')}, {user?.division || t('common.na')}
           </span>
         </div>
         <div className="d-flex align-items-center gap-3">
@@ -723,12 +725,12 @@ const WaterDashboard = () => {
             <Dropdown.Toggle variant="light" className="d-flex align-items-center">
               <FaUser className="me-2" />
               {email}
-              <span className="badge bg-secondary ms-2">Water</span>
+              <span className="badge bg-secondary ms-2">{t('dept.Water')}</span>
             </Dropdown.Toggle>
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => navigate('/official-dashboard/water/settings')}>
                 <FaTools className="me-2" />
-                Settings
+                {t('nav.settings')}
               </Dropdown.Item>
               <Dropdown.Divider />
               <Dropdown.Item onClick={() => {
@@ -736,7 +738,7 @@ const WaterDashboard = () => {
                 navigate('/login');
               }} className="text-danger">
                 <FaSignOutAlt className="me-2" />
-                Logout
+                {t('nav.logout')}
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
@@ -752,7 +754,7 @@ const WaterDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("pending")}>
                 <div className={`card ${activeTab === "pending" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Pending</h5>
+                    <h5 className="card-title">{t('status.pending')}</h5>
                     <h2 className="card-text">{stats.pending}</h2>
                   </div>
                 </div>
@@ -762,7 +764,7 @@ const WaterDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("assigned")}>
                 <div className={`card ${activeTab === "assigned" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Assigned</h5>
+                    <h5 className="card-title">{t('status.assigned')}</h5>
                     <h2 className="card-text">{stats.assigned}</h2>
                   </div>
                 </div>
@@ -772,7 +774,7 @@ const WaterDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("inProgress")}>
                 <div className={`card ${activeTab === "inProgress" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">In Progress</h5>
+                    <h5 className="card-title">{t('status.in-progress')}</h5>
                     <h2 className="card-text">{stats.inProgress}</h2>
                   </div>
                 </div>
@@ -782,7 +784,7 @@ const WaterDashboard = () => {
               <div className="stat-card" onClick={() => setActiveTab("resolved")}>
                 <div className={`card ${activeTab === "resolved" ? 'border-primary' : ''}`}>
                   <div className="card-body">
-                    <h5 className="card-title">Resolved</h5>
+                    <h5 className="card-title">{t('status.resolved')}</h5>
                     <h2 className="card-text">{stats.resolved}</h2>
                   </div>
                 </div>
@@ -802,7 +804,7 @@ const WaterDashboard = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search grievances..."
+                  placeholder={t('petitioner.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -814,10 +816,10 @@ const WaterDashboard = () => {
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
-                <option value="">All Priorities</option>
-                <option value="High">High Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="Low">Low Priority</option>
+                <option value="">{t('official.allPriorities')}</option>
+                <option value="High">{t('official.highPriority')}</option>
+                <option value="Medium">{t('official.mediumPriority')}</option>
+                <option value="Low">{t('official.lowPriority')}</option>
               </select>
             </div>
           </div>
@@ -826,7 +828,7 @@ const WaterDashboard = () => {
         <div className="content-area">
           <main className="main-content w-100">
             <div className="page-header">
-              <h1>Grievances</h1>
+              <h1>{t('official.grievances')}</h1>
             </div>
 
             <div className="tab-container">
@@ -835,36 +837,36 @@ const WaterDashboard = () => {
                   className={`tab ${activeTab === "pending" ? "active" : ""}`}
                   onClick={() => setActiveTab("pending")}
                 >
-                  Pending
+                  {t('status.pending')}
                 </button>
                 <button
                   className={`tab ${activeTab === "assigned" ? "active" : ""}`}
                   onClick={() => setActiveTab("assigned")}
                 >
-                  Assigned
+                  {t('status.assigned')}
                 </button>
                 <button
                   className={`tab ${activeTab === "inProgress" ? "active" : ""}`}
                   onClick={() => setActiveTab("inProgress")}
                 >
-                  In Progress
+                  {t('status.in-progress')}
                 </button>
                 <button
                   className={`tab ${activeTab === "resolved" ? "active" : ""}`}
                   onClick={() => setActiveTab("resolved")}
                 >
-                  Resolved
+                  {t('status.resolved')}
                 </button>
               </div>
 
               <div className="grievances-list">
                 {loading ? (
-                  <div className="loading">Loading...</div>
+                  <div className="loading">{t('common.loading')}</div>
                 ) : error ? (
                   <div className="error">{error}</div>
                 ) : filteredGrievances.length === 0 ? (
                   <div className="no-grievances">
-                    <h4>No grievances found</h4>
+                    <h4>{t('common.noGrievances')}</h4>
                   </div>
                 ) : (
                   filteredGrievances.map((grievance) => renderGrievanceCard(grievance))
@@ -880,9 +882,9 @@ const WaterDashboard = () => {
       {showDeclineModal && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Decline Grievance</h3>
+            <h3>{t('official.declineTitle')}</h3>
             <textarea
-              placeholder="Enter reason for declining..."
+              placeholder={t('official.declinePlaceholder')}
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
             />
@@ -894,14 +896,14 @@ const WaterDashboard = () => {
                   setDeclineReason("");
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-danger"
                 onClick={() => handleDecline(selectedGrievance)}
                 disabled={!declineReason.trim()}
               >
-                Decline
+                {t('official.decline')}
               </button>
             </div>
           </div>
@@ -912,13 +914,13 @@ const WaterDashboard = () => {
       {showResourceModal && selectedGrievance && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Resource Management</h3>
+            <h3>{t('official.resourceTitle')}</h3>
             <form onSubmit={(e) => {
               e.preventDefault();
               handleResourceSubmit(selectedGrievance._id);
             }}>
               <div className="form-group">
-                <label>Start Date</label>
+                <label>{t('resource.startDate')}</label>
                 <input
                   type="date"
                   value={resourceForm.startDate}
@@ -927,7 +929,7 @@ const WaterDashboard = () => {
                 />
               </div>
               <div className="form-group">
-                <label>End Date</label>
+                <label>{t('resource.endDate')}</label>
                 <input
                   type="date"
                   value={resourceForm.endDate}
@@ -936,16 +938,16 @@ const WaterDashboard = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Requirements Needed</label>
+                <label>{t('resource.requirements')}</label>
                 <textarea
                   value={resourceForm.requirementsNeeded}
                   onChange={(e) => setResourceForm(prev => ({ ...prev, requirementsNeeded: e.target.value }))}
                   required
-                  placeholder="List all requirements"
+                  placeholder={t('official.requirementsPlaceholder')}
                 />
               </div>
               <div className="form-group">
-                <label>Funds Required (₹)</label>
+                <label>{t('resource.fundsRupees')}</label>
                 <input
                   type="number"
                   value={resourceForm.fundsRequired}
@@ -955,16 +957,16 @@ const WaterDashboard = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Resources Required</label>
+                <label>{t('resource.materials')}</label>
                 <textarea
                   value={resourceForm.resourcesRequired}
                   onChange={(e) => setResourceForm(prev => ({ ...prev, resourcesRequired: e.target.value }))}
                   required
-                  placeholder="List all resources"
+                  placeholder={t('official.resourcesPlaceholder')}
                 />
               </div>
               <div className="form-group">
-                <label>Manpower Needed</label>
+                <label>{t('resource.manpower')}</label>
                 <input
                   type="number"
                   value={resourceForm.manpowerNeeded}
@@ -975,10 +977,10 @@ const WaterDashboard = () => {
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowResourceModal(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Submit
+                  {t('common.submit')}
                 </button>
               </div>
             </form>
@@ -989,26 +991,26 @@ const WaterDashboard = () => {
       {showTimelineModal && selectedGrievance && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Update Timeline</h3>
+            <h3>{t('official.updateTimeline')}</h3>
             <form onSubmit={(e) => {
               e.preventDefault();
               handleTimelineSubmit(selectedGrievance._id);
             }}>
               <div className="form-group">
-                <label>Stage</label>
+                <label>{t('official.stage')}</label>
                 <select
                   value={timelineForm.stageName}
                   onChange={(e) => setTimelineForm(prev => ({ ...prev, stageName: e.target.value }))}
                   required
                 >
-                  <option value="">Select Stage</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Investigation">Investigation</option>
-                  <option value="Resolution">Resolution</option>
+                  <option value="">{t('official.selectStage')}</option>
+                  <option value="Under Review">{t('stage.review')}</option>
+                  <option value="Investigation">{t('stage.investigation')}</option>
+                  <option value="Resolution">{t('stage.resolution')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>Date</label>
+                <label>{t('official.date')}</label>
                 <input
                   type="date"
                   value={timelineForm.date}
@@ -1017,20 +1019,20 @@ const WaterDashboard = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Description</label>
+                <label>{t('form.description')}</label>
                 <textarea
                   value={timelineForm.description}
                   onChange={(e) => setTimelineForm(prev => ({ ...prev, description: e.target.value }))}
                   required
-                  placeholder="Example: Gathered evidence from site visit"
+                  placeholder={t('official.stagePlaceholder')}
                 />
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowTimelineModal(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Save Stage
+                  {t('official.saveStage')}
                 </button>
               </div>
             </form>

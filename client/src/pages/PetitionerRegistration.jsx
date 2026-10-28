@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 import { useNavigate, Link, Link as RouterLink } from 'react-router-dom';
 import AuthShell from '../components/AuthShell';
 import toast from 'react-hot-toast';
@@ -6,6 +7,7 @@ import { API_BASE } from '../config';
 
 const PetitionerRegistration = () => {
   const navigate = useNavigate();
+  const { t } = useT();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -34,41 +36,41 @@ const PetitionerRegistration = () => {
     let formIsValid = true;
 
     if (!formData.firstName.trim()) {
-      tempErrors.firstName = 'First name is required';
+      tempErrors.firstName = 'validation.firstNameRequired';
       formIsValid = false;
     }
 
     if (!formData.lastName.trim()) {
-      tempErrors.lastName = 'Last name is required';
+      tempErrors.lastName = 'validation.lastNameRequired';
       formIsValid = false;
     }
 
     if (!formData.email.trim()) {
-      tempErrors.email = 'Email is required';
+      tempErrors.email = 'validation.emailRequired';
       formIsValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      tempErrors.email = 'Email is invalid';
+      tempErrors.email = 'validation.emailInvalid';
       formIsValid = false;
     }
 
     if (!formData.phone.trim()) {
-      tempErrors.phone = 'Phone number is required';
+      tempErrors.phone = 'validation.phoneRequired';
       formIsValid = false;
     } else if (!/^\d{10}$/.test(formData.phone)) {
-      tempErrors.phone = 'Phone number must be 10 digits';
+      tempErrors.phone = 'validation.phoneDigits';
       formIsValid = false;
     }
 
     if (!formData.password) {
-      tempErrors.password = 'Password is required';
+      tempErrors.password = 'validation.passwordRequired';
       formIsValid = false;
     } else if (formData.password.length < 6) {
-      tempErrors.password = 'Password must be at least 6 characters';
+      tempErrors.password = 'validation.passwordMin6';
       formIsValid = false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      tempErrors.confirmPassword = 'Passwords do not match';
+      tempErrors.confirmPassword = 'validation.passwordMismatch';
       formIsValid = false;
     }
 
@@ -90,25 +92,25 @@ const PetitionerRegistration = () => {
         const data = await response.json();
 
         if (response.ok) {
-          toast.success("Registration successful! You can now login.");
+          toast.success(t('register.success'));
           navigate('/login/petitioner');
         } else {
-          toast.error(data.message || "Registration failed. Please try again.");
+          toast.error(data.message || t('register.failed'));
         }
       } catch (error) {
         console.error("Error during registration:", error);
-        toast.error("An error occurred. Please try again later.");
+        toast.error(t('common.serverError'));
       }
     }
   };
 
   return (
     <AuthShell
-      role="For citizens filing and tracking petitions"
-      title="Create a petitioner account"
-      lede="Your district and taluk route every petition you file to the right office."
+      role={t('login.petitioner.role')}
+      title={t('register.petitioner.title')}
+      lede={t('register.petitioner.lede')}
       back="/register"
-      backLabel="All account types"
+      backLabel={t('register.allTypes')}
       accentThread={1}
       wide
     >
@@ -116,7 +118,7 @@ const PetitionerRegistration = () => {
       <form onSubmit={handleSubmit}>
         <div className="row g-3">
           <div className="col-md-6">
-            <label htmlFor="firstName" className="form-label">First Name*</label>
+            <label htmlFor="firstName" className="form-label">{t('form.firstName')}*</label>
             <input
               type="text"
               className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
@@ -125,11 +127,11 @@ const PetitionerRegistration = () => {
               value={formData.firstName}
               onChange={handleChange}
             />
-            {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+            {errors.firstName && <div className="invalid-feedback">{t(errors.firstName)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="lastName" className="form-label">Last Name*</label>
+            <label htmlFor="lastName" className="form-label">{t('form.lastName')}*</label>
             <input
               type="text"
               className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
@@ -138,13 +140,13 @@ const PetitionerRegistration = () => {
               value={formData.lastName}
               onChange={handleChange}
             />
-            {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+            {errors.lastName && <div className="invalid-feedback">{t(errors.lastName)}</div>}
           </div>
         </div>
 
         <div className="row g-3 mt-1">
           <div className="col-md-6">
-            <label htmlFor="email" className="form-label">Email*</label>
+            <label htmlFor="email" className="form-label">{t('form.email')}*</label>
             <input
               type="email"
               className={`form-control ${errors.email ? 'is-invalid' : ''}`}
@@ -153,11 +155,11 @@ const PetitionerRegistration = () => {
               value={formData.email}
               onChange={handleChange}
             />
-            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+            {errors.email && <div className="invalid-feedback">{t(errors.email)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="phone" className="form-label">Phone*</label>
+            <label htmlFor="phone" className="form-label">{t('form.phone')}*</label>
             <input
               type="tel"
               className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
@@ -166,12 +168,12 @@ const PetitionerRegistration = () => {
               value={formData.phone}
               onChange={handleChange}
             />
-            {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+            {errors.phone && <div className="invalid-feedback">{t(errors.phone)}</div>}
           </div>
         </div>
 
         <div className="mt-3">
-          <label htmlFor="address" className="form-label">Address</label>
+          <label htmlFor="address" className="form-label">{t('form.address')}</label>
           <input
             type="text"
             className="form-control"
@@ -184,7 +186,7 @@ const PetitionerRegistration = () => {
 
         <div className="row g-3 mt-1">
           <div className="col-md-6">
-            <label htmlFor="city" className="form-label">City</label>
+            <label htmlFor="city" className="form-label">{t('form.city')}</label>
             <input
               type="text"
               className="form-control"
@@ -196,7 +198,7 @@ const PetitionerRegistration = () => {
           </div>
 
           <div className="col-md-3">
-            <label htmlFor="state" className="form-label">State</label>
+            <label htmlFor="state" className="form-label">{t('form.state')}</label>
             <select
               className="form-select"
               id="state"
@@ -204,13 +206,13 @@ const PetitionerRegistration = () => {
               value={formData.state}
               onChange={handleChange}
             >
-              <option value="">Choose...</option>
-              <option value="TN">Tamil Nadu</option>
+              <option value="">{t('form.choose')}</option>
+              <option value="TN">{t('form.tamilNadu')}</option>
             </select>
           </div>
 
           <div className="col-md-3">
-            <label htmlFor="pincode" className="form-label">Pincode</label>
+            <label htmlFor="pincode" className="form-label">{t('form.pincode')}</label>
             <input
               type="text"
               className="form-control"
@@ -224,7 +226,7 @@ const PetitionerRegistration = () => {
 
         <div className="row g-3 mt-3">
           <div className="col-md-6">
-            <label htmlFor="password" className="form-label">Password*</label>
+            <label htmlFor="password" className="form-label">{t('form.password')}*</label>
             <input
               type="password"
               className={`form-control ${errors.password ? 'is-invalid' : ''}`}
@@ -233,11 +235,11 @@ const PetitionerRegistration = () => {
               value={formData.password}
               onChange={handleChange}
             />
-            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+            {errors.password && <div className="invalid-feedback">{t(errors.password)}</div>}
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="confirmPassword" className="form-label">Confirm Password*</label>
+            <label htmlFor="confirmPassword" className="form-label">{t('form.confirmPassword')}*</label>
             <input
               type="password"
               className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
@@ -246,7 +248,7 @@ const PetitionerRegistration = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
             />
-            {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            {errors.confirmPassword && <div className="invalid-feedback">{t(errors.confirmPassword)}</div>}
           </div>
         </div>
 
@@ -260,7 +262,7 @@ const PetitionerRegistration = () => {
                 required
               />
               <label className="form-check-label" htmlFor="terms">
-                I agree to the <RouterLink to="/terms-and-conditions">Terms of Service</RouterLink> and <RouterLink to="/privacy-policy">Privacy Policy</RouterLink>
+                {t('register.agreeBefore')} <RouterLink to="/terms-and-conditions">{t('register.termsOfService')}</RouterLink> {t('register.and')} <RouterLink to="/privacy-policy">{t('footer.privacy')}</RouterLink>{t('register.agreeAfter')}
               </label>
             </div>
           </div>
@@ -268,12 +270,12 @@ const PetitionerRegistration = () => {
 
         <div className="d-grid gap-2 mt-4">
           <button type="submit" className="btn btn-primary btn-lg">
-            Register as Petitioner
+            {t('register.petitioner.submit')}
           </button>
         </div>
       </form>
       <p className="tk-auth__alt">
-        Already have an account? <Link to="/login/petitioner">Sign in</Link>
+        {t('register.already')} <Link to="/login/petitioner">{t('nav.signIn')}</Link>
       </p>
     </AuthShell>
   );

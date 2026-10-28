@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useT } from '../i18n/LanguageContext';
 import { useLocation, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import AdminSidebar from '../components/AdminSidebar';
@@ -8,11 +9,12 @@ import { Container, Row, Col, Card, Button, Table, Modal, Form } from "react-boo
 import { Bell, AlertTriangle } from "lucide-react";
 import toast from 'react-hot-toast';
 import api from '../utils/api';
-import { span } from '../engine/format';
+import { engineReasons, span } from '../engine/format';
 
 const AdminDashboard = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { t, formatDate, locale } = useT();
     const [resourceData, setResourceData] = useState([]);
     const [resourceLoading, setResourceLoading] = useState(true);
     const [resourceError, setResourceError] = useState(null);
@@ -88,7 +90,7 @@ const AdminDashboard = () => {
             setResourceData(response.data.resources);
         } catch (error) {
             console.error('Error fetching resource data:', error);
-            setResourceError('Failed to load resource data');
+            setResourceError(t('admin.resourcesFailed'));
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 // Clear any stale data
                 setResourceData([]);
@@ -127,7 +129,7 @@ const AdminDashboard = () => {
             setOfficials(response.data.officials.filter(official => official.department === department));
         } catch (error) {
             console.error('Error fetching officials:', error);
-            toast.error('Failed to load officials');
+            toast.error(t('admin.officialsFailed'));
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 navigate('/login');
             }
@@ -156,8 +158,8 @@ const AdminDashboard = () => {
 
         } catch (error) {
             console.error('Error fetching dashboard statistics:', error);
-            setDashboardError('Failed to load dashboard statistics');
-            toast.error('Failed to load dashboard statistics');
+            setDashboardError(t('admin.statsFailed'));
+            toast.error(t('admin.statsFailed'));
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 // Clear any stale data
                 setDepartmentStats([]);
@@ -175,7 +177,7 @@ const AdminDashboard = () => {
             setQuickStats(response.data);
         } catch (error) {
             console.error('Error fetching quick statistics:', error);
-            toast.error('Failed to load quick statistics');
+            toast.error(t('admin.statsFailed'));
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 // Reset quick stats to default values
                 setQuickStats({
@@ -193,12 +195,12 @@ const AdminDashboard = () => {
         try {
             // Validate response
             if (!escalationResponse?.trim()) {
-                toast.error('Please provide a response to the escalation');
+                toast.error(t('admin.responseRequired'));
                 return;
             }
 
             if (!selectedGrievance?._id) {
-                toast.error('Invalid grievance selected');
+                toast.error(t('admin.invalidGrievance'));
                 return;
             }
 
@@ -211,14 +213,14 @@ const AdminDashboard = () => {
 
             await api.post(`/grievances/${selectedGrievance._id}/escalation-response`, payload);
 
-            toast.success('Response submitted successfully');
+            toast.success(t('admin.responseSent'));
             setShowResponseModal(false);
             setEscalationResponse('');
             setNewAssignedTo('');
             fetchEscalatedGrievances();
         } catch (error) {
             console.error('Error responding to escalation:', error);
-            toast.error(error.response?.data?.error || error.message || 'Failed to submit response');
+            toast.error(error.response?.data?.error || error.message || t('admin.responseFailed'));
             if (error.message === 'AUTH_REQUIRED' || error.isAuthError) {
                 navigate('/login');
             }
@@ -262,11 +264,11 @@ const AdminDashboard = () => {
         <Row className="mb-4">
             <Col md={6}>
                 <Card className="p-3 shadow-sm">
-                    <h6>Department Performance</h6>
+                    <h6>{t('admin.deptPerformance')}</h6>
                     {dashboardLoading ? (
                         <div className="text-center py-4">
                             <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                                <span className="visually-hidden">{t('common.loading')}</span>
                             </div>
                         </div>
                     ) : dashboardError ? (
@@ -279,24 +281,24 @@ const AdminDashboard = () => {
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         >
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="department" />
+                            <XAxis dataKey="department" tickFormatter={(d) => t(`dept.${d}`)} />
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="resolved" fill="#2d6a4f" name="Resolved" barSize={50} />
-                            <Bar dataKey="pending" fill="#b7791f" name="Pending" barSize={50} />
-                            <Bar dataKey="inProgress" fill="#19486a" name="In Progress" barSize={50} />
+                            <Bar dataKey="resolved" fill="#2d6a4f" name={t('status.resolved')} barSize={50} />
+                            <Bar dataKey="pending" fill="#b7791f" name={t('status.pending')} barSize={50} />
+                            <Bar dataKey="inProgress" fill="#19486a" name={t('status.in-progress')} barSize={50} />
                         </BarChart>
                     )}
                 </Card>
             </Col>
             <Col md={6}>
                 <Card className="p-3 shadow-sm">
-                    <h6>Monthly Trends</h6>
+                    <h6>{t('admin.monthlyTrends')}</h6>
                     {dashboardLoading ? (
                         <div className="text-center py-4">
                             <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                                <span className="visually-hidden">{t('common.loading')}</span>
                             </div>
                         </div>
                     ) : dashboardError ? (
@@ -308,8 +310,8 @@ const AdminDashboard = () => {
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Line type="monotone" dataKey="total" stroke="#141416" name="Total Cases" />
-                            <Line type="monotone" dataKey="resolved" stroke="#2d6a4f" name="Resolved Cases" />
+                            <Line type="monotone" dataKey="total" stroke="#141416" name={t('admin.totalCases')} />
+                            <Line type="monotone" dataKey="resolved" stroke="#2d6a4f" name={t('admin.casesResolved')} />
                         </LineChart>
                     )}
                 </Card>
@@ -324,7 +326,7 @@ const AdminDashboard = () => {
                     <>
                         <div className="p-4">
                             <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h2>Dashboard</h2>
+                                <h2>{t('nav.dashboard')}</h2>
                                 <div className="d-flex align-items-center gap-3">
                                     <Bell size={20} />
                                 </div>
@@ -335,7 +337,7 @@ const AdminDashboard = () => {
                         <Row className="mb-4">
                             <Col xs={12} sm={6} md={3} className="mb-3 mb-md-0">
                                 <Card className="p-3 shadow-sm h-100">
-                                    <h6 className="text-muted">Total Cases</h6>
+                                    <h6 className="text-muted">{t('admin.totalCases')}</h6>
                                     <h4>{quickStats.totalCases.value}</h4>
                                     <span className={`text-${quickStats.totalCases.trend.includes("+") ? "success" : "muted"}`}>
                                         {quickStats.totalCases.trend}
@@ -344,7 +346,7 @@ const AdminDashboard = () => {
                             </Col>
                             <Col xs={12} sm={6} md={3} className="mb-3 mb-md-0">
                                 <Card className="p-3 shadow-sm h-100">
-                                    <h6 className="text-muted">Active Cases</h6>
+                                    <h6 className="text-muted">{t('admin.activeCases')}</h6>
                                     <h4>{quickStats.activeCases.value}</h4>
                                     <span className={`text-${quickStats.activeCases.trend.includes("+") ? "warning" : "muted"}`}>
                                         {quickStats.activeCases.trend}
@@ -353,7 +355,7 @@ const AdminDashboard = () => {
                             </Col>
                             <Col xs={12} sm={6} md={3} className="mb-3 mb-md-0">
                                 <Card className="p-3 shadow-sm h-100">
-                                    <h6 className="text-muted">Cases Resolved</h6>
+                                    <h6 className="text-muted">{t('admin.casesResolved')}</h6>
                                     <h4>{quickStats.resolvedCases.value}</h4>
                                     <span className={`text-${quickStats.resolvedCases.trend.includes("+") ? "success" : "muted"}`}>
                                         {quickStats.resolvedCases.trend}
@@ -362,9 +364,9 @@ const AdminDashboard = () => {
                             </Col>
                             <Col xs={12} sm={6} md={3}>
                                 <Card className="p-3 shadow-sm h-100">
-                                    <h6 className="text-muted">Departments</h6>
+                                    <h6 className="text-muted">{t('admin.departments')}</h6>
                                     <h4>{quickStats.departments.value}</h4>
-                                    <span className="text-muted">{quickStats.departments.trend}</span>
+                                    <span className="text-muted">{quickStats.departments.trend === 'Stable' ? t('admin.stable') : quickStats.departments.trend}</span>
                                 </Card>
                             </Col>
                         </Row>
@@ -375,48 +377,48 @@ const AdminDashboard = () => {
                         {/* Resource Management Section */}
                         <Card className="shadow-sm mt-4">
                             <Card.Header>
-                                <h6>Department Resource Management</h6>
+                                <h6>{t('admin.deptResources')}</h6>
                             </Card.Header>
                             <Card.Body>
                                 {resourceLoading ? (
-                                    <div className="text-center">Loading resource data...</div>
+                                    <div className="text-center">{t('admin.loadingResources')}</div>
                                 ) : resourceError ? (
                                     <div className="text-danger">{resourceError}</div>
                                 ) : (
                                     <Table responsive>
                                         <thead>
                                             <tr>
-                                                <th>Department</th>
-                                                <th>Grievance ID</th>
-                                                <th>Taluk</th>
-                                                <th>Division</th>
-                                                <th>District</th>
-                                                <th>Start Date</th>
-                                                <th>End Date</th>
-                                                <th>Requirements</th>
-                                                <th>Funds Required</th>
-                                                <th>Resources</th>
-                                                <th>Manpower</th>
-                                                <th>Status</th>
+                                                <th>{t('common.department')}</th>
+                                                <th>{t('common.grievanceId')}</th>
+                                                <th>{t('form.taluk')}</th>
+                                                <th>{t('form.division')}</th>
+                                                <th>{t('form.district')}</th>
+                                                <th>{t('resource.startDate')}</th>
+                                                <th>{t('resource.endDate')}</th>
+                                                <th>{t('resource.requirements')}</th>
+                                                <th>{t('resource.funds')}</th>
+                                                <th>{t('resource.materials')}</th>
+                                                <th>{t('resource.manpower')}</th>
+                                                <th>{t('common.status')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {resourceData.map((resource) => (
                                                 <tr key={resource._id}>
-                                                    <td>{resource.department}</td>
+                                                    <td>{t(`dept.${resource.department}`)}</td>
                                                     <td>{resource.petitionId}</td>
-                                                    <td>{resource.taluk || 'N/A'}</td>
-                                                    <td>{resource.division || 'N/A'}</td>
-                                                    <td>{resource.district || 'N/A'}</td>
-                                                    <td>{new Date(resource.startDate).toLocaleDateString()}</td>
-                                                    <td>{new Date(resource.endDate).toLocaleDateString()}</td>
+                                                    <td>{resource.taluk || t('common.na')}</td>
+                                                    <td>{resource.division || t('common.na')}</td>
+                                                    <td>{resource.district || t('common.na')}</td>
+                                                    <td>{formatDate(resource.startDate)}</td>
+                                                    <td>{formatDate(resource.endDate)}</td>
                                                     <td>{resource.requirementsNeeded}</td>
-                                                    <td>₹{resource.fundsRequired.toLocaleString()}</td>
+                                                    <td>₹{resource.fundsRequired.toLocaleString(locale)}</td>
                                                     <td>{resource.resourcesRequired}</td>
                                                     <td>{resource.manpowerNeeded}</td>
                                                     <td>
                                                         <span className={`badge bg-${getStatusBadgeClass(resource.status)}`}>
-                                                            {resource.status}
+                                                            {t(`status.${resource.status}`)}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -433,34 +435,33 @@ const AdminDashboard = () => {
                     <>
                     <Card className="shadow-sm mb-4 tk-flagged-queue">
                         <Card.Header>
-                            <h6 className="mb-0">Flagged by the escalation engine</h6>
+                            <h6 className="mb-0">{t('admin.flaggedTitle')}</h6>
                         </Card.Header>
                         <Card.Body>
                             <p className="mb-3">
-                                Open grievances that one of the engine’s three rules has caught and the petitioner has not escalated yet.
-                                Respond or reassign now instead of waiting for the escalation.
+                                {t('admin.flaggedLede')}
                             </p>
                             {escalatedLoading ? (
                                 <div className="text-center py-3">
                                     <div className="spinner-border text-primary" role="status">
-                                        <span className="visually-hidden">Loading...</span>
+                                        <span className="visually-hidden">{t('common.loading')}</span>
                                     </div>
                                 </div>
                             ) : flaggedGrievances.length === 0 ? (
-                                <p className="text-muted mb-0">Nothing flagged. Every open grievance is inside its window.</p>
+                                <p className="text-muted mb-0">{t('admin.nothingFlagged')}</p>
                             ) : (
                                 <Table responsive>
                                     <thead>
                                         <tr>
-                                            <th>Grievance ID</th>
-                                            <th>Title</th>
-                                            <th>Department</th>
-                                            <th>Priority</th>
-                                            <th>Status</th>
-                                            <th>Open for</th>
-                                            <th>Why the engine flagged it</th>
-                                            <th>Assigned Official</th>
-                                            <th>Action</th>
+                                            <th>{t('common.grievanceId')}</th>
+                                            <th>{t('form.title')}</th>
+                                            <th>{t('common.department')}</th>
+                                            <th>{t('common.priority')}</th>
+                                            <th>{t('common.status')}</th>
+                                            <th>{t('admin.openFor')}</th>
+                                            <th>{t('admin.whyFlagged')}</th>
+                                            <th>{t('common.assignedTo')}</th>
+                                            <th>{t('common.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -468,21 +469,21 @@ const AdminDashboard = () => {
                                             <tr key={grievance._id}>
                                                 <td>{grievance.petitionId}</td>
                                                 <td>{grievance.title}</td>
-                                                <td>{grievance.department}</td>
+                                                <td>{t(`dept.${grievance.department}`)}</td>
                                                 <td>
-                                                    <span className={`badge bg-${getPriorityBadgeClass(grievance.priority)}`}>{grievance.priority}</span>
+                                                    <span className={`badge bg-${getPriorityBadgeClass(grievance.priority)}`}>{t(`priority.${grievance.priority}`)}</span>
                                                 </td>
-                                                <td>{grievance.status}</td>
-                                                <td>{span(Date.now() - new Date(grievance.createdAt).getTime())}</td>
-                                                <td className="tk-flagged-queue__why">{grievance.engine.reasons.join('. ')}</td>
+                                                <td>{t(`status.${grievance.status}`)}</td>
+                                                <td>{span(Date.now() - new Date(grievance.createdAt).getTime(), t)}</td>
+                                                <td className="tk-flagged-queue__why">{engineReasons(grievance.engine, t).join(' ')}</td>
                                                 <td>
                                                     {grievance.assignedTo
                                                         ? `${grievance.assignedTo.firstName || ''} ${grievance.assignedTo.lastName || ''}`.trim()
-                                                        : 'Unassigned'}
+                                                        : t('common.notAssigned')}
                                                 </td>
                                                 <td>
                                                     <Button variant="danger" size="sm" onClick={() => handleOpenResponseModal(grievance)}>
-                                                        Act on it
+                                                        {t('admin.actOnIt')}
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -494,7 +495,7 @@ const AdminDashboard = () => {
                     </Card>
                     <Card className="shadow-sm">
                         <Card.Header className="d-flex justify-content-between align-items-center">
-                            <h6 className="mb-0">Escalated Grievances</h6>
+                            <h6 className="mb-0">{t('admin.escalatedTitle')}</h6>
                             <Button
                                 variant="outline-primary"
                                 size="sm"
@@ -504,10 +505,10 @@ const AdminDashboard = () => {
                                 {escalatedLoading ? (
                                     <>
                                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                        Loading...
+                                        {t('common.loading')}
                                     </>
                                 ) : (
-                                    <>Refresh</>
+                                    <>{t('common.refresh')}</>
                                 )}
                             </Button>
                         </Card.Header>
@@ -520,73 +521,73 @@ const AdminDashboard = () => {
                             ) : escalatedLoading ? (
                                 <div className="text-center py-4">
                                     <div className="spinner-border text-primary" role="status">
-                                        <span className="visually-hidden">Loading...</span>
+                                        <span className="visually-hidden">{t('common.loading')}</span>
                                     </div>
                                 </div>
                             ) : escalatedGrievances.length === 0 ? (
                                 <div className="text-center py-4 text-muted">
-                                    No escalated grievances found
+                                    {t('admin.noEscalated')}
                                 </div>
                             ) : (
                                 <Table responsive>
                                     <thead>
                                         <tr>
-                                            <th>Grievance ID</th>
-                                            <th>Title</th>
-                                            <th>Department</th>
-                                            <th>Taluk</th>
-                                            <th>Division</th>
-                                            <th>District</th>
-                                            <th>Status</th>
-                                            <th>Priority</th>
-                                            <th>Assigned Official</th>
-                                            <th>Created At</th>
-                                            <th>Escalated At</th>
-                                            <th>Days Since Escalation</th>
-                                            <th>Escalation Reason</th>
-                                            <th>Action</th>
+                                            <th>{t('common.grievanceId')}</th>
+                                            <th>{t('form.title')}</th>
+                                            <th>{t('common.department')}</th>
+                                            <th>{t('form.taluk')}</th>
+                                            <th>{t('form.division')}</th>
+                                            <th>{t('form.district')}</th>
+                                            <th>{t('common.status')}</th>
+                                            <th>{t('common.priority')}</th>
+                                            <th>{t('common.assignedTo')}</th>
+                                            <th>{t('common.filed')}</th>
+                                            <th>{t('admin.escalatedAt')}</th>
+                                            <th>{t('admin.daysSince')}</th>
+                                            <th>{t('admin.escalationReason')}</th>
+                                            <th>{t('common.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {escalatedGrievances.map((grievance) => (
                                             <tr key={grievance._id}>
-                                                <td>{grievance.petitionId || 'N/A'}</td>
+                                                <td>{grievance.petitionId || t('common.na')}</td>
                                                 <td>
                                                     <div className="text-truncate" style={{ maxWidth: '200px' }} title={grievance.title}>
-                                                        {grievance.title || 'No Title'}
+                                                        {grievance.title || t('common.na')}
                                                     </div>
                                                 </td>
-                                                <td>{grievance.department || 'Unassigned'}</td>
-                                                <td>{grievance.taluk || 'N/A'}</td>
-                                                <td>{grievance.division || 'N/A'}</td>
-                                                <td>{grievance.district || 'N/A'}</td>
+                                                <td>{grievance.department ? t(`dept.${grievance.department}`) : t('common.na')}</td>
+                                                <td>{grievance.taluk || t('common.na')}</td>
+                                                <td>{grievance.division || t('common.na')}</td>
+                                                <td>{grievance.district || t('common.na')}</td>
                                                 <td>
                                                     <span className={`badge bg-${getStatusBadgeClass(grievance.status)}`}>
-                                                        {grievance.status ? grievance.status.charAt(0).toUpperCase() + grievance.status.slice(1) : 'Unknown'}
+                                                        {grievance.status ? t(`status.${grievance.status}`) : t('common.na')}
                                                     </span>
                                                 </td>
                                                 <td>
                                                     <span className={`badge bg-${getPriorityBadgeClass(grievance.priority)}`}>
-                                                        {grievance.priority ? grievance.priority.charAt(0).toUpperCase() + grievance.priority.slice(1).toLowerCase() : 'Not Set'}
+                                                        {grievance.priority ? t(`priority.${grievance.priority}`) : t('common.na')}
                                                     </span>
                                                 </td>
                                                 <td>
                                                     {grievance.assignedTo ?
-                                                        `${grievance.assignedTo.firstName || ''} ${grievance.assignedTo.lastName || ''}`.trim() || 'Unnamed' :
-                                                        'Unassigned'
+                                                        `${grievance.assignedTo.firstName || ''} ${grievance.assignedTo.lastName || ''}`.trim() || t('common.na') :
+                                                        t('common.notAssigned')
                                                     }
                                                 </td>
-                                                <td>{grievance.createdAt ? new Date(grievance.createdAt).toLocaleDateString() : 'N/A'}</td>
-                                                <td>{grievance.escalatedAt ? new Date(grievance.escalatedAt).toLocaleDateString() : 'N/A'}</td>
+                                                <td>{grievance.createdAt ? formatDate(grievance.createdAt) : 'N/A'}</td>
+                                                <td>{grievance.escalatedAt ? formatDate(grievance.escalatedAt) : 'N/A'}</td>
                                                 <td>
                                                     {grievance.escalatedAt ?
                                                         Math.floor((new Date() - new Date(grievance.escalatedAt)) / (1000 * 60 * 60 * 24)) :
-                                                        'N/A'
+                                                        t('common.na')
                                                     }
                                                 </td>
                                                 <td>
                                                     <div className="text-truncate" style={{ maxWidth: '200px' }} title={grievance.escalationReason}>
-                                                        {grievance.escalationReason || 'No reason provided'}
+                                                        {grievance.escalationReason || t('common.na')}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -615,38 +616,38 @@ const AdminDashboard = () => {
                             <Col>
                                 <Card className="shadow-sm">
                                     <Card.Header>
-                                        <h6>Resource Management</h6>
+                                        <h6>{t('admin.resources')}</h6>
                                     </Card.Header>
                                     <Card.Body>
                                         {resourceLoading ? (
-                                            <div className="text-center">Loading resource data...</div>
+                                            <div className="text-center">{t('admin.loadingResources')}</div>
                                         ) : resourceError ? (
                                             <div className="text-danger">{resourceError}</div>
                                         ) : (
                                             <Table responsive>
                                                 <thead>
                                                     <tr>
-                                                        <th>Department</th>
-                                                        <th>Grievance ID</th>
-                                                        <th>Requirements</th>
-                                                        <th>Funds Required</th>
-                                                        <th>Resources</th>
-                                                        <th>Manpower</th>
-                                                        <th>Status</th>
+                                                        <th>{t('common.department')}</th>
+                                                        <th>{t('common.grievanceId')}</th>
+                                                        <th>{t('resource.requirements')}</th>
+                                                        <th>{t('resource.funds')}</th>
+                                                        <th>{t('resource.materials')}</th>
+                                                        <th>{t('resource.manpower')}</th>
+                                                        <th>{t('common.status')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {resourceData.map((resource) => (
                                                         <tr key={resource._id}>
-                                                            <td>{resource.department}</td>
+                                                            <td>{t(`dept.${resource.department}`)}</td>
                                                             <td>{resource.petitionId}</td>
                                                             <td>{resource.requirementsNeeded}</td>
-                                                            <td>₹{resource.fundsRequired.toLocaleString()}</td>
+                                                            <td>₹{resource.fundsRequired.toLocaleString(locale)}</td>
                                                             <td>{resource.resourcesRequired}</td>
                                                             <td>{resource.manpowerNeeded}</td>
                                                             <td>
                                                                 <span className={`badge bg-${getStatusBadgeClass(resource.status)}`}>
-                                                                    {resource.status}
+                                                                    {t(`status.${resource.status}`)}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -667,9 +668,9 @@ const AdminDashboard = () => {
                             <Col>
                                 <Card className="shadow-sm">
                                     <Card.Body>
-                                        <h4 className="mb-4">Smart Query Assistant</h4>
+                                        <h4 className="mb-4">{t('admin.smartQueryTitle')}</h4>
                                         <p className="text-muted mb-4">
-                                            Ask questions about grievances, resources, and escalations in natural language
+                                            {t('admin.smartQueryLede')}
                                         </p>
                                         <SmartQueryChatbot />
                                     </Card.Body>
@@ -701,60 +702,60 @@ const AdminDashboard = () => {
                 dialogClassName="modal-90w"
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>Respond to Escalation</Modal.Title>
+                    <Modal.Title>{t('admin.respondTitle')}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {selectedGrievance && (
                         <Form>
                             {/* Grievance Details Section */}
                             <div className="grievance-details mb-4 p-3 bg-light rounded">
-                                <h6 className="border-bottom pb-2 mb-3">Grievance Details</h6>
+                                <h6 className="border-bottom pb-2 mb-3">{t('submit.grievanceDetails')}</h6>
                                 <div className="mb-2">
-                                    <strong>Grievance ID:</strong> {selectedGrievance.petitionId || 'N/A'}
+                                    <strong>{t('common.grievanceId')}:</strong> {selectedGrievance.petitionId || t('common.na')}
                                 </div>
                                 <div className="mb-2">
-                                    <strong>Title:</strong> {selectedGrievance.title}
+                                    <strong>{t('form.title')}:</strong> {selectedGrievance.title}
                                 </div>
                                 <div className="mb-2">
-                                    <strong>Description:</strong>
+                                    <strong>{t('form.description')}:</strong>
                                     <p className="text-muted mb-2">{selectedGrievance.description}</p>
                                 </div>
                                 <div className="mb-2">
-                                    <strong>Status:</strong>{' '}
+                                    <strong>{t('common.status')}:</strong>{' '}
                                     <span className={`badge bg-${getStatusBadgeClass(selectedGrievance.status)}`}>
-                                        {selectedGrievance.status?.charAt(0).toUpperCase() + selectedGrievance.status?.slice(1)}
+                                        {t(`status.${selectedGrievance.status}`)}
                                     </span>
                                 </div>
                                 <div className="mb-2">
-                                    <strong>Priority:</strong>{' '}
+                                    <strong>{t('common.priority')}:</strong>{' '}
                                     <span className={`badge bg-${getPriorityBadgeClass(selectedGrievance.priority)}`}>
-                                        {selectedGrievance.priority}
+                                        {t(`priority.${selectedGrievance.priority}`)}
                                     </span>
                                 </div>
                                 <div className="mb-2">
-                                    <strong>Escalation Reason:</strong>
-                                    <p className="text-muted mb-0">{selectedGrievance.escalationReason || selectedGrievance.engine?.reason}</p>
+                                    <strong>{t('admin.escalationReason')}:</strong>
+                                    <p className="text-muted mb-0">{selectedGrievance.escalationReason || engineReasons(selectedGrievance.engine, t).join(' ')}</p>
                                 </div>
                             </div>
 
                             {/* Response Form Section */}
-                            <h6 className="border-bottom pb-2 mb-3">Response Details</h6>
+                            <h6 className="border-bottom pb-2 mb-3">{t('admin.responseDetails')}</h6>
                             <Form.Group className="mb-3">
-                                <Form.Label>Department</Form.Label>
+                                <Form.Label>{t('common.department')}</Form.Label>
                                 <Form.Control
                                     type="text"
-                                    value={selectedGrievance.department}
+                                    value={t(`dept.${selectedGrievance.department}`)}
                                     disabled
                                 />
                             </Form.Group>
                             <Form.Group className="mb-3">
-                                <Form.Label>Reassign to Official ({selectedGrievance.department} Department)</Form.Label>
+                                <Form.Label>{t('admin.reassignTo', { dept: t(`dept.${selectedGrievance.department}`) })}</Form.Label>
                                 <Form.Select
                                     value={newAssignedTo}
                                     onChange={(e) => setNewAssignedTo(e.target.value)}
                                     required
                                 >
-                                    <option value="">Select an official</option>
+                                    <option value="">{t('admin.selectOfficial')}</option>
                                     {officials.map((official) => (
                                         <option key={official._id} value={official._id}>
                                             {official.firstName} {official.lastName} - {official.email}
@@ -763,13 +764,13 @@ const AdminDashboard = () => {
                                 </Form.Select>
                             </Form.Group>
                             <Form.Group className="mb-3">
-                                <Form.Label>Response</Form.Label>
+                                <Form.Label>{t('admin.response')}</Form.Label>
                                 <Form.Control
                                     as="textarea"
                                     rows={4}
                                     value={escalationResponse}
                                     onChange={(e) => setEscalationResponse(e.target.value)}
-                                    placeholder="Enter your response to the escalation..."
+                                    placeholder={t('admin.responsePlaceholder')}
                                     required
                                 />
                             </Form.Group>
@@ -778,10 +779,10 @@ const AdminDashboard = () => {
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowResponseModal(false)}>
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button variant="primary" onClick={handleRespondToEscalation}>
-                        Submit Response
+                        {t('admin.submitResponse')}
                     </Button>
                 </Modal.Footer>
             </Modal>

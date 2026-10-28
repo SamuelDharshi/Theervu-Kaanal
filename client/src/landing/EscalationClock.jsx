@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 
 // The 48-hour window a High priority petition gets before it escalates,
 // counting down from the moment the visitor arrives.
@@ -6,6 +7,7 @@ const WINDOW_MS = 48 * 3600 * 1000;
 const pad = (n) => String(n).padStart(2, '0');
 
 export default function EscalationClock() {
+  const { t } = useT();
   const [start] = useState(() => Date.now());
   const [now, setNow] = useState(start);
 
@@ -20,8 +22,8 @@ export default function EscalationClock() {
   const s = Math.floor((left % 60000) / 1000);
 
   return (
-    <div className="lp-frag lp-frag--clock" data-ui aria-label="Time left before a High priority petition escalates">
-      <span className="lp-frag__small">High priority · escalates in</span>
+    <div className="lp-frag lp-frag--clock" data-ui aria-label={t('landing.clock.aria')}>
+      <span className="lp-frag__small">{t('landing.clock.label')}</span>
       <span className="lp-frag__clock">
         {pad(h)}<i>:</i>{pad(m)}<i>:</i>{pad(s)}
       </span>
