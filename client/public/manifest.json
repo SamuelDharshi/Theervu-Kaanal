@@ -1,15 +1,15 @@
 {
-    "short_name": "GRS",
-    "name": "Grievance Redressal System",
+    "short_name": "Theervu-Kaanal",
+    "name": "Theervu-Kaanal Grievance Redressal System",
     "icons": [
         {
-            "src": "favicon.ico",
-            "sizes": "64x64 32x32 24x24 16x16",
-            "type": "image/x-icon"
+            "src": "tk-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
         }
     ],
     "start_url": ".",
     "display": "standalone",
-    "theme_color": "#000000",
-    "background_color": "#ffffff"
+    "theme_color": "#141416",
+    "background_color": "#E8E6E1"
 }
